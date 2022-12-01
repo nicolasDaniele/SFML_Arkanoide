@@ -1,21 +1,16 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include "Paddle.h"
 
 using namespace std;
 
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(500, 600), "Arkanoide");
-
-
-    sf::Texture paddle_texture;
-    if (!paddle_texture.loadFromFile("Assets/Sprites/paddle.png"))
-    {
-        cout << "ERROR: paddle_texture could not be loaded. " << endl;
-    }
-    sf::Sprite paddle_sprite;
-    paddle_sprite.setTexture(paddle_texture);
-    paddle_sprite.setPosition(225, 500);
+    
+    string paddleTexturePath = "Assets/Sprites/paddle.png";
+    sf::Vector2f paddlePos(225, 500);
+    Paddle* paddle = new Paddle(paddleTexturePath, paddlePos);
 
     while (window.isOpen())
     {
@@ -23,24 +18,28 @@ int main()
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
-                window.close();
-                
-            if(event.type == sf::Event::KeyPressed)
             {
-                if (event.key.code == sf::Keyboard::Right)
+                window.close();
+            }
+
+            if (event.type == sf::Event::KeyPressed)
+            {
+                if (event.key.code == sf::Keyboard::A)
                 {
-                    paddle_sprite.setPosition(paddle_sprite.getPosition().x + 5, paddle_sprite.getPosition().y);
+                    sf::Vector2f vec(-6, 0);
+                    paddle->add_move_vector(vec);
                 }
 
-                if (event.key.code == sf::Keyboard::Left)
+                if (event.key.code == sf::Keyboard::D)
                 {
-                    paddle_sprite.move(-2, 0);
+                    sf::Vector2f vec(6, 0);
+                    paddle->add_move_vector(vec);
                 }
             }
         }
 
         window.clear();
-        window.draw(paddle_sprite);
+        window.draw(paddle->get_sprite());
         window.display();
     }
 }
