@@ -1,11 +1,22 @@
 #include "Paddle.h"
 
-void Paddle::add_move_vector(sf::Vector2f vec)
+void Paddle::update(float dt)
 {
-    sprite.setPosition(sprite.getPosition() + vec);
+	sprite.move(velocity * dt);
 }
 
-sf::Sprite Paddle::get_sprite()
+void Paddle::clamp_position(sf::RenderWindow* window)
 {
-    return sprite;
+	float minXPos = 0;
+	float maxXPos = (float)(window->getSize().x -texture.getSize().x);
+
+	if (sprite.getPosition().x < minXPos)
+	{
+		sprite.setPosition(minXPos, sprite.getPosition().y);
+	}
+
+	if (sprite.getPosition().x > maxXPos)
+	{
+		sprite.setPosition(maxXPos, sprite.getPosition().y);
+	}
 }
