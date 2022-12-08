@@ -1,18 +1,15 @@
 #pragma once
 
-#include <iostream>
 #include <SFML/Graphics.hpp>
+#include <iostream>
 #include "MovableObject.h"
 
-using namespace std;
-
-class Paddle : public MovableObject
+class Ball : public MovableObject
 {
-
 public:
-	Paddle(string textureFilePath, sf::Vector2f _startPosition) :
+	Ball(string textureFilePath, sf::Vector2f _startPosition) :
 		MovableObject(textureFilePath, _startPosition) { }
-	virtual ~Paddle() { }
+	virtual ~Ball() { }
 	void update(float dt) override;
 	void clamp_position(sf::RenderWindow* window) override;
 };
