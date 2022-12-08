@@ -1,18 +1,18 @@
 #pragma once
-
 #include <iostream>
+#include "Entity.h"
 #include <SFML/Graphics.hpp>
-#include "MovableObject.h"
 
 using namespace std;
 
-class Paddle : public MovableObject
+class Paddle : public Entity
 {
 
 public:
-	Paddle(string textureFilePath, sf::Vector2f _startPosition) :
-		MovableObject(textureFilePath, _startPosition) { }
+	Paddle(string textureFilePath, sf::Vector2f startPos) :
+		Entity(textureFilePath, startPos) { } 
 	virtual ~Paddle() { }
-	void update(float dt) override;
-	void clamp_position(sf::RenderWindow* window) override;
+	void add_move_vector(sf::Vector2f vec);
+	void add_move_vector(sf::Vector2f vec);
+	sf::Sprite get_sprite();
 };
