@@ -16,9 +16,11 @@ protected:
 
 public:
 	Entity(string textureFilePath, sf::Vector2f _startPosition);
+	Entity() { }
 	virtual ~Entity() { }
 	virtual void update(float dt) = 0;
-	void set_position(const sf::Vector2f newPosition);
+	virtual void draw(sf::RenderWindow* window) = 0;
+	virtual void set_position(const sf::Vector2f newPosition);
 	void set_position(const float xPosition, const float yPosition);
 	void set_scale(const float xScale, const float yScale);
 	sf::Sprite get_sprite() const;

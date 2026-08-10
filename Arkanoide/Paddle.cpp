@@ -5,6 +5,11 @@ void Paddle::update(float dt)
 	sprite.move(velocity * dt);
 }
 
+void Paddle::draw(sf::RenderWindow* window)
+{
+	window->draw(get_sprite());
+}
+
 void Paddle::clamp_position(sf::RenderWindow* window)
 {
 	float minXPos = 0;

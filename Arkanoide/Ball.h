@@ -7,9 +7,11 @@
 class Ball : public MovableObject
 {
 public:
-	Ball(string textureFilePath, sf::Vector2f _startPosition) :
-		MovableObject(textureFilePath, _startPosition) { }
+	Ball(string textureFilePath, sf::Vector2f _startPosition, float _initialSpeed) :
+		MovableObject(textureFilePath, _startPosition, _initialSpeed) { }
 	virtual ~Ball() { }
+
 	void update(float dt) override;
+	void draw(sf::RenderWindow* window) override;
 	void clamp_position(sf::RenderWindow* window) override;
 };

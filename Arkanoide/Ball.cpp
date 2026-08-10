@@ -5,6 +5,11 @@ void Ball::update(float dt)
 	sprite.move(velocity * dt);
 }
 
+void Ball::draw(sf::RenderWindow* window)
+{
+	window->draw(get_sprite());
+}
+
 void Ball::clamp_position(sf::RenderWindow* window)
 {
 	float minXPos = 0;
