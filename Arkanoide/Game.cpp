@@ -1,45 +1,47 @@
-#include <iostream>
-#include <random>
 #include <SFML/Graphics.hpp>
 #include "Paddle.h"
 #include "Ball.h"
 #include "Block.h"
 #include "ScoreManager.h"
+#include "LevelManager.h"
 #include "Label.h"
-
-using namespace std;
 
 sf::RenderWindow* window; 
 Paddle* paddle;
 Ball* ball;
-const int blocksRows = 9;
-const int blocksColumns = 15;
-vector<Block*> blocks;
 
 const int maxLives = 3;
 int lives;
 float currentTime;
 float prevTime;
+int currentLevel = 0;
 
 Label* scoreLabel;
 Label* livesLabel;
 Label* gameOverLabel;
 Label* countdownLabel;
 Label* resetLabel;
+Label* gameCompleteLabel;
 sf::Font font;
 
-ScoreManager* ScoreManager::instance = nullptr;
+// Paddle movement variables
+bool movingLeft = false;
+bool movingRight = false;
 
 // Ball speed incrementation variables
 float speedIncreaseTimer = 0.0f;
 const float speedIncreaseInterval = 5.0f;
 const float speedMultiplier = 1.1f;
 
+ScoreManager* ScoreManager::instance = nullptr;
+LevelManager* LevelManager::instance = nullptr;
+
 enum GameState
 {
     COUNTDOWN,
     PLAYING,
-    GAMEOVER
+    GAME_OVER,
+    GAME_COMPLETE
 };
 
 GameState state;
@@ -47,10 +49,10 @@ GameState state;
 void init();
 void handle_inputs(sf::Event ev);
 void update(float dt);
-sf::Color from_hsv(float hue, float saturation, float value);
 bool check_collision(sf::FloatRect rect1, sf::FloatRect rect2);
 void draw();
 void reset();
+void finish_game();
 
 int main()
 {
@@ -79,10 +81,24 @@ int main()
             }
 
             handle_inputs(ev);
+
+            // Update Paddle velocity
+            if (movingLeft && !movingRight)
+            {
+                paddle->set_velocity(-paddle->get_current_speed(), 0);
+            }
+            else if (movingRight && !movingLeft)
+            {
+                paddle->set_velocity(paddle->get_current_speed(), 0);
+            }
+            else
+            {
+                paddle->set_velocity(0, 0);
+            }
         }
 
         sf::Time dt = clock.restart();
-        if (state != GameState::GAMEOVER)
+        if (state != GameState::GAME_OVER)
         {
             update(dt.asSeconds());
         }
@@ -91,37 +107,12 @@ int main()
         draw();
         window->display();
     }
+
+    finish_game();
 }
 
 void init()
 {
-
-    // Blocks initialization
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> distrib_s(0.8f, 1.0f);
-    std::uniform_real_distribution<float> distrib_v(0.4f, 1.0f);
-
-    for (int i = 0; i < blocksRows; i++)
-    {
-        float hue = (360.0f / blocksRows) * i;
-
-        float s = distrib_s(gen);
-        float v = distrib_v(gen);
-        sf::Color color = from_hsv(hue, s, v);
-
-        for (int j = 0; j < blocksColumns; j++)
-        {
-            sf::Vector2f offsetPos(3, 50);
-            Block* block = new Block(color, { 0, 0 }, { 30, 15 });
-            float blockPosX = (block->get_size().x) * 1.1f * j;
-            float blockPosY = (block->get_size().y) * 1.1f * i;
-            block->set_position(offsetPos + sf::Vector2f(blockPosX, blockPosY));
-            blocks.push_back(block);
-        }
-    }
-
-
     // Paddle initialization
     string paddleTexturePath = "Assets/Sprites/paddle.png";
     sf::Vector2f paddlePos(225, 500);
@@ -149,7 +140,7 @@ void init()
     // GameOverLabel
     float centerPosX = (float)(window->getSize().x / 2);
     float centerPosY = (float)(window->getSize().y / 2);
-    gameOverLabel = new Label(font, 40, sf::Vector2f(centerPosX, centerPosY),
+    gameOverLabel = new Label(font, 40, sf::Vector2f(centerPosX, centerPosY - 80),
         sf::Color::White, "GAME OVER", true);
     // CountdownLabel
     countdownLabel = new Label(font, 40, sf::Vector2f(centerPosX, centerPosY),
@@ -157,6 +148,11 @@ void init()
     // ResetLabel
     resetLabel = new Label(font, 25, sf::Vector2f(centerPosX, centerPosY + 80),
         sf::Color::White, "", true);
+    //GameCompleteLabel
+    gameCompleteLabel = new Label(font, 45, sf::Vector2f(centerPosX, centerPosY - 150),
+        sf::Color::White, "   GAME COMPLETE!\nCONGRATULATIONS!", true);
+
+    LevelManager::get_instance()->load_level(0);
 }
 
 void handle_inputs(sf::Event ev)
@@ -168,25 +164,37 @@ void handle_inputs(sf::Event ev)
             if (ev.key.code == sf::Keyboard::A ||
                 ev.key.code == sf::Keyboard::Left)
             {
-                paddle->set_velocity(-paddle->get_current_speed(), 0);
+                movingLeft = true;
             }
 
             if (ev.key.code == sf::Keyboard::D ||
                 ev.key.code == sf::Keyboard::Right)
             {
-                paddle->set_velocity(paddle->get_current_speed(), 0);
+                movingRight = true;
             }
         }
         
 
-        if (ev.key.code == sf::Keyboard::Space && state == GameState::GAMEOVER)
+        if (ev.key.code == sf::Keyboard::Space && 
+            (state == GameState::GAME_OVER || state == GameState::GAME_COMPLETE))
         {
             reset();
         }
     }
+
     if (ev.type == sf::Event::KeyReleased)
     {
-        paddle->set_velocity(0, 0);
+        if (ev.key.code == sf::Keyboard::A ||
+            ev.key.code == sf::Keyboard::Left)
+        {
+            movingLeft = false;
+        }
+
+        if (ev.key.code == sf::Keyboard::D ||
+            ev.key.code == sf::Keyboard::Right)
+        {
+            movingRight = false;
+        }
     }
 }
 
@@ -233,26 +241,41 @@ void update(float dt)
     if (check_collision(paddle->get_sprite().getGlobalBounds(), 
         ball->get_sprite().getGlobalBounds()))
     {
-        float newBallXVelocity = rand() % (int)ball->get_current_speed();
-        sf::Vector2f newBallVelocity(newBallXVelocity, -ball->get_velocity().y);
-        ball->set_velocity(newBallVelocity);
+        ball->ricochet(paddle);
     }
 
+
     // Block-Ball collision
-    for (int i = 0; i < blocks.size(); i++)
+    auto blockBounds = LevelManager::get_instance()->check_block_collision(ball->get_sprite().getGlobalBounds());
+    if (blockBounds.has_value())
     {
-        if (check_collision(blocks[i]->get_rectangle().getGlobalBounds(), 
-            ball->get_sprite().getGlobalBounds()))
+        ball->bounce_from(blockBounds.value());
+
+        ScoreManager::get_instance()->add_to_score(10);
+        scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
+    }
+
+    // Check for level complete
+    if (LevelManager::get_instance()->is_level_complete())
+    {
+        currentLevel++;
+
+        if (currentLevel >= LevelManager::get_instance()->get_num_levels())
         {
-            float newBallXVelocity = rand() % (int)ball->get_current_speed();
-            sf::Vector2f newBallVelocity(newBallXVelocity, -ball->get_velocity().y);
-            ball->set_velocity(newBallVelocity);
+            state = GameState::GAME_COMPLETE;
+            return;
+        }
+        else
+        {
+            LevelManager::get_instance()->load_level(currentLevel);
 
-            delete(blocks[i]);
-            blocks.erase(blocks.begin() + i);
+            ball->reset();
+            paddle->set_position(paddle->get_start_position());
 
-            ScoreManager::get_instance()->add_to_score(10);
-            scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
+            state = GameState::COUNTDOWN;
+            currentTime = 0.0f;
+            prevTime = 0.0f;
+            speedIncreaseTimer = 0.0f;
         }
     }
 
@@ -264,38 +287,22 @@ void update(float dt)
 
         if (lives < 1)
         {
-            state = GameState::GAMEOVER;
+            state = GameState::GAME_OVER;
+            return;
         }
         else
         {
-            ball->set_position(ball->get_start_position());
-            ball->set_current_speed(ball->get_initial_speed());
-            paddle->set_position(paddle->get_start_position());
+            paddle->reset();
+            ball->reset();
+
             state = GameState::COUNTDOWN;
 
             currentTime = 0.0f;
             prevTime = 0.0f;
+            speedIncreaseTimer = 0.0f;
         }
     }
 }
-
-sf::Color from_hsv(float hue, float saturation, float value)
-{
-    float c = value * saturation;
-    float x = c * (1.0f - std::abs(std::fmod(hue / 60.0f, 2.0f) - 1.0f));
-    float m = value - c;
-    float r = 0, g = 0, b = 0;
-
-    if (hue >= 0 && hue < 60) { r = c; g = x; b = 0; }
-    else if (hue >= 60 && hue < 120) { r = x; g = c; b = 0; }
-    else if (hue >= 120 && hue < 180) { r = 0; g = c; b = x; }
-    else if (hue >= 180 && hue < 240) { r = 0; g = x; b = c; }
-    else if (hue >= 240 && hue < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
-
-    return sf::Color((r + m) * 255, (g + m) * 255, (b + m) * 255);
-}
-
 
 bool check_collision(sf::FloatRect rect1, sf::FloatRect rect2)
 {
@@ -304,23 +311,29 @@ bool check_collision(sf::FloatRect rect1, sf::FloatRect rect2)
 
 void draw()
 {
-    for (Block* block : blocks)
-    {
-        if (block)
-        {
-            block->draw(window);
-        }
-    }
+    LevelManager::get_instance()->draw(window);
 
-    if (state == GameState::GAMEOVER)
+    if (state == GameState::GAME_OVER)
     {
         resetLabel->set_string("\t\tYour Score: " + to_string(ScoreManager::get_instance()->get_score()) +
             "\n\nPress SpaceBar to Reset");
 
         gameOverLabel->draw(window);
         resetLabel->draw(window);
+
+        return;
     }
-    if (state == GameState::COUNTDOWN)
+    else if (state == GameState::GAME_COMPLETE)
+    {
+        resetLabel->set_string("\t\tYour Score: " + to_string(ScoreManager::get_instance()->get_score()) +
+            "\n\nPress SpaceBar to Reset");
+
+        resetLabel->draw(window);
+        gameCompleteLabel->draw(window);
+        
+        return;
+    }
+    else if (state == GameState::COUNTDOWN)
     {
         countdownLabel->draw(window);
     }
@@ -338,8 +351,8 @@ void draw()
 
 void reset()
 {
-    paddle->set_position(paddle->get_start_position());
-    ball->set_position(ball->get_start_position());
+    paddle->reset();
+    ball->reset();
 
     currentTime = 0.0f;
     prevTime = 0.0f;
@@ -349,5 +362,21 @@ void reset()
     livesLabel->set_string("Lives: " + to_string(lives));
     scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
 
+    LevelManager::get_instance()->load_level(0);
+
     state = GameState::COUNTDOWN;
+}
+
+void finish_game()
+{
+    delete window;
+    delete paddle;
+    delete ball;
+
+    delete scoreLabel;
+    delete livesLabel;
+    delete gameOverLabel;
+    delete countdownLabel;
+    delete resetLabel;
+    delete gameCompleteLabel;
 }

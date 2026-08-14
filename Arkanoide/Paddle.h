@@ -17,4 +17,5 @@ public:
 	void update(float dt) override;
 	void draw(sf::RenderWindow* window) override;
 	void clamp_position(sf::RenderWindow* window) override;
+	void reset() override;
 };

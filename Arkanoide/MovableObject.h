@@ -34,4 +34,5 @@ public:
 	void set_max_speed(const float newMaxSpeed);
 	void clamp_velocity();
 	virtual void clamp_position(sf::RenderWindow* window) = 0;
+	virtual void reset() = 0;
 };

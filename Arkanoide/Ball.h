@@ -14,4 +14,9 @@ public:
 	void update(float dt) override;
 	void draw(sf::RenderWindow* window) override;
 	void clamp_position(sf::RenderWindow* window) override;
+	void reset() override;
+
+	// Functions called when colliding with other entities
+	void ricochet(Entity* other);
+	void bounce_from(sf::FloatRect otherBounds);
 };

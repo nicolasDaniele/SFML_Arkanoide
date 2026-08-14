@@ -49,13 +49,9 @@ void MovableObject::clamp_velocity()
 {
     if (velocity.x > maxSpeed)
         velocity.x = maxSpeed;
-   /* if (velocity.x < 0.0f)
-        velocity.x = 0.0f;*/
 
     if (velocity.y > maxSpeed)
         velocity.y = maxSpeed;
-    /*if (velocity.y < 0.0f)
-        velocity.y = 0.0f;*/
 }
 
 sf::Vector2f MovableObject::get_velocity() const

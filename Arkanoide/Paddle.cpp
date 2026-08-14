@@ -25,3 +25,8 @@ void Paddle::clamp_position(sf::RenderWindow* window)
 		sprite.setPosition(maxXPos, sprite.getPosition().y);
 	}
 }
+
+void Paddle::reset()
+{
+	set_position(startPosition);
+}
