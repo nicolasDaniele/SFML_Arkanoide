@@ -14,7 +14,7 @@ void Ball::draw(sf::RenderWindow* window)
 void Ball::clamp_position(sf::RenderWindow* window)
 {
 	float minXPos = 0;
-	float maxXPos = (float)(window->getSize().x - texture.getSize().x);
+	float maxXPos = (float)(window->getSize().x - sprite.getGlobalBounds().width);
 
 	if (sprite.getPosition().x < minXPos || sprite.getPosition().x > maxXPos)
 	{

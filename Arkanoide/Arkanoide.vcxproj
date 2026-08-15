@@ -154,6 +154,7 @@
     <ClCompile Include="MovableObject.cpp" />
     <ClCompile Include="Paddle.cpp" />
     <ClCompile Include="ScoreManager.cpp" />
+    <ClCompile Include="SoundManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ball.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="MovableObject.h" />
     <ClInclude Include="Paddle.h" />
     <ClInclude Include="ScoreManager.h" />
+    <ClInclude Include="SoundManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

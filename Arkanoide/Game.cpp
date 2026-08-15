@@ -1,9 +1,11 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Paddle.h"
 #include "Ball.h"
 #include "Block.h"
 #include "ScoreManager.h"
 #include "LevelManager.h"
+#include "SoundManager.h"
 #include "Label.h"
 
 sf::RenderWindow* window; 
@@ -33,8 +35,10 @@ float speedIncreaseTimer = 0.0f;
 const float speedIncreaseInterval = 5.0f;
 const float speedMultiplier = 1.1f;
 
+
 ScoreManager* ScoreManager::instance = nullptr;
 LevelManager* LevelManager::instance = nullptr;
+SoundManager* SoundManager::instance = nullptr;
 
 enum GameState
 {
@@ -117,6 +121,7 @@ void init()
     string paddleTexturePath = "Assets/Sprites/paddle.png";
     sf::Vector2f paddlePos(225, 500);
     paddle = new Paddle(paddleTexturePath, paddlePos, 200.0f);
+    //paddle->set_scale(2.0f, 2.0f);
 
     // Ball initialization
     string ballTexturePath = "Assets/Sprites/ball.png";
@@ -124,7 +129,7 @@ void init()
     ball = new Ball(ballTexturePath, ballPos, 200.0f);
     ball->set_velocity(sf::Vector2f(0, ball->get_current_speed()));
     ball->set_max_speed(1800.0f);
-    ball->set_scale(2, 2);
+    ball->set_scale(0.25f, 0.25f);
 
     // Labels initialization
     if (!font.loadFromFile("Assets/Fonts/Pixellari.ttf"))
@@ -151,6 +156,11 @@ void init()
     //GameCompleteLabel
     gameCompleteLabel = new Label(font, 45, sf::Vector2f(centerPosX, centerPosY - 150),
         sf::Color::White, "   GAME COMPLETE!\nCONGRATULATIONS!", true);
+
+
+    // Init SoundManager
+    SoundManager::get_instance()->init();
+
 
     LevelManager::get_instance()->load_level(0);
 }
@@ -242,6 +252,8 @@ void update(float dt)
         ball->get_sprite().getGlobalBounds()))
     {
         ball->ricochet(paddle);
+
+        SoundManager::get_instance()->play_boop();
     }
 
 
@@ -250,6 +262,8 @@ void update(float dt)
     if (blockBounds.has_value())
     {
         ball->bounce_from(blockBounds.value());
+
+        SoundManager::get_instance()->play_beep();
 
         ScoreManager::get_instance()->add_to_score(10);
         scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
@@ -282,6 +296,8 @@ void update(float dt)
     // Loose life
     if (ball->get_sprite().getPosition().y > window->getSize().y)
     {
+        SoundManager::get_instance()->play_lose();
+
         lives--;
         livesLabel->set_string("Lives: " + to_string(lives));
 
