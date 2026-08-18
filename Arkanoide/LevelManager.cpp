@@ -2,13 +2,12 @@
 #include "LevelManager.h"
 #include "Block.h"
 
-LevelManager::LevelManager()
+void LevelManager::init()
 {
     levels =
     {
         {
-            /*{
-                "###############",
+            {
                 "###############",
                 "###############",
                 "###############",
@@ -17,31 +16,86 @@ LevelManager::LevelManager()
                 "###############",
                 "###############",
                 "###############"
-            }*/
+            }  
+        },
+
+        {
             {
-                "...............",
-                "...............",
-                "...............",
-                "###...###...###",
-                "###...###...###",
-                "###...###...###",
-                "...............",
-                "...............",
-                "..............."
+                "UUUUUUUUUUUUUUU",
+                "U###UUUUUUU###U",
+                "U####UUUUU####U",
+                "U#####UUU#####U",
+                "U######U######U",
+                "U#############U",
+                "U#############U",
+                "UUUUU#####UUUUU"
             }
         },
 
         {
             {
-                "......####.....",
-                ".....######....",
-                "....########...",
-                "...##########..",
-                "..############.",
-                "...##########..",
-                "....########...",
-                ".....######....",
-                "......####....."
+                "......###......",
+                ".....#####.....",
+                "....#######....",
+                "...#########...",
+                "..###########..",
+                ".#############.",
+                "..###########..",
+                "...#########...",
+                "....#######....",
+                ".....#####.....",
+                "......###......"
+            }
+        },
+        {
+            {
+                "UUUUUUUUUUUUUUU",
+                "U#############U",
+                "U##..#####..##U",
+                "U##..#####..##U",
+                "U#####UUU#####U",
+                "U#####UUU#####U",
+                "U##..#####..##U",
+                "U##..#####..##U",
+                "U#############U"
+            }
+        },
+        {
+            {
+                "UUUUUUUUUUUUUUU",
+                "U#############U",
+                "UUUUUUUUUUUUU#U",
+                "U#############U",
+                "U#UUUUUUUUUUUUU",
+                "U#############U",
+                "UUUUUUUUUUUUU#U",
+                "##############U",
+                "#UUUUUUUUUUUUUU"
+            }
+        },
+        {
+             {
+                "###############",
+                "##UUU#####UUU##",
+                "#UUUUUU#UUUUUU#",
+                "#UUUUUUUUUUUUU#",
+                "#UUUUUUUUUUUUU#",
+                "###UUUUUUUUU###",
+                "#####UUUUU#####",
+                "######UUU######",
+                "#######U#######",
+                "###############"
+            }
+        },
+        {
+            {
+                "###UUUUUUUUU###",
+                "U###UUUUUUU###U",
+                "UUU###UUU###UUU",
+                "UUUUU#####UUUUU",
+                "UUU###UUU###UUU",
+                "U###UUUUUUU###U",
+                "###UUUUUUUUU###"
             }
         }
     };
@@ -49,6 +103,11 @@ LevelManager::LevelManager()
 
 void LevelManager::load_level(int levelIndex)
 {
+    if (levelIndex < 0 || levelIndex >= levels.size())
+    {
+        return;
+    }
+
     for (Block* block : blocks)
     {
         delete block;
@@ -69,32 +128,43 @@ void LevelManager::load_level(int levelIndex)
     for (int i = 0; i < level.layout.size(); i++)
     {
         float hue = (360.0f / level.layout.size()) * i;
-
         float s = distrib_s(gen);
         float v = distrib_v(gen);
 
-        sf::Color color = from_hsv(hue, s, v);
+        sf::Color roUColor = from_hsv(hue, s, v);
 
         for (int j = 0; j < level.layout[i].size(); j++)
         {
-            if (level.layout[i][j] != '#')
+            BlockType blockType = get_block_type(level.layout[i][j]);
+            if (blockType == BlockType::Empty)
                 continue;
 
-            Block* block = new Block(
-                color,
-                { 0, 0 },
-                { 30, 15 }
-            );
+            Block* block = create_block(blockType, roUColor, { 0.0f, 0.0f });
+            if (block == nullptr)
+                continue;
 
             float blockPosX = block->get_size().x * 1.1f * j;
             float blockPosY = block->get_size().y * 1.1f * i;
 
-            block->set_position(
-                offsetPos + sf::Vector2f(blockPosX, blockPosY)
-            );
+            block->set_position(offsetPos + sf::Vector2f(blockPosX, blockPosY));
 
             blocks.push_back(block);
         }
+    }
+}
+
+Block* LevelManager::create_block(BlockType type, sf::Color color, sf::Vector2f position)
+{
+    switch (type)
+    {
+    case BlockType::Normal:
+        return new Block(color, position, { 27, 15 }, true);
+
+    case BlockType::Unbreakable:
+        return new Block(sf::Color(200, 200, 200), position, { 27, 15 }, false);
+
+    default:
+        return nullptr;
     }
 }
 
@@ -103,6 +173,21 @@ void LevelManager::draw(sf::RenderWindow* window)
     for (Block* block : blocks)
     {
         block->draw(window);
+    }
+}
+
+BlockType LevelManager::get_block_type(char symbol)
+{
+    switch (symbol)
+    {
+    case '#':
+        return BlockType::Normal;
+
+    case 'U':
+        return BlockType::Unbreakable;
+
+    default:
+        return BlockType::Empty;
     }
 }
 
@@ -123,18 +208,26 @@ sf::Color LevelManager::from_hsv(float hue, float saturation, float value)
     return sf::Color((r + m) * 255, (g + m) * 255, (b + m) * 255);
 }
 
-std::optional<sf::FloatRect> LevelManager::check_block_collision(sf::FloatRect bounds)
+std::optional<BlockCollision> LevelManager::check_block_collision(sf::FloatRect bounds)
 {
     for (int i = 0; i < blocks.size(); i++)
     {
         if (blocks[i]->get_rectangle().getGlobalBounds().intersects(bounds))
         {
+            BlockCollision collision;
+
             sf::FloatRect blockBounds = blocks[i]->get_rectangle().getGlobalBounds();
 
-            delete blocks[i];
-            blocks.erase(blocks.begin() + i);
+            collision.blockBounds = blockBounds;
+            collision.isBreakable = blocks[i]->is_breakable();
 
-            return blockBounds;
+            if (blocks[i]->is_breakable())
+            {
+                delete blocks[i];
+                blocks.erase(blocks.begin() + i);
+            }
+
+            return collision;
         }
     }
 
@@ -143,10 +236,24 @@ std::optional<sf::FloatRect> LevelManager::check_block_collision(sf::FloatRect b
 
 bool LevelManager::is_level_complete() const
 {
-    return blocks.empty();
+    for (Block* block : blocks)
+    {
+        if (block->is_breakable())
+            return false;
+    }
+
+    return true;
 }
 
 int LevelManager::get_num_levels() const
 {
     return levels.size();
+}
+
+LevelManager::~LevelManager()
+{
+    for (Block* block : blocks)
+    {
+        delete block;
+    }
 }

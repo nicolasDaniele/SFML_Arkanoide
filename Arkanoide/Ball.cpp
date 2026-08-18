@@ -13,19 +13,36 @@ void Ball::draw(sf::RenderWindow* window)
 
 void Ball::clamp_position(sf::RenderWindow* window)
 {
-	float minXPos = 0;
-	float maxXPos = (float)(window->getSize().x - sprite.getGlobalBounds().width);
+	sf::FloatRect bounds = sprite.getGlobalBounds();
 
-	if (sprite.getPosition().x < minXPos || sprite.getPosition().x > maxXPos)
+	// Left Screen Border
+	if (bounds.left < 0)
 	{
-		sf::Vector2f newBallVelocity(-velocity.x, velocity.y);
-		velocity = newBallVelocity;
+		sprite.move(-bounds.left, 0);
+
+		if (velocity.x < 0)
+			velocity.x = -velocity.x;
 	}
 
-	if (sprite.getPosition().y < 0)
+	// Right Screen Border
+	else if (bounds.left + bounds.width > window->getSize().x)
 	{
-		sf::Vector2f newBallVelocity(velocity.x, -velocity.y);
-		velocity = newBallVelocity;
+		float overflow =
+			bounds.left + bounds.width - window->getSize().x;
+
+		sprite.move(-overflow, 0);
+
+		if (velocity.x > 0)
+			velocity.x = -velocity.x;
+	}
+
+	// Upper Screen border
+	if (bounds.top < 0)
+	{
+		sprite.move(0, -bounds.top);
+
+		if (velocity.y < 0)
+			velocity.y = -velocity.y;
 	}
 }
 

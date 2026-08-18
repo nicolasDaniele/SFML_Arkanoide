@@ -1,5 +1,4 @@
 #include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp>
 #include "Paddle.h"
 #include "Ball.h"
 #include "Block.h"
@@ -12,7 +11,8 @@ sf::RenderWindow* window;
 Paddle* paddle;
 Ball* ball;
 
-const int maxLives = 3;
+const int maxLives = 5;
+const int subSteps = 4;
 int lives;
 float currentTime;
 float prevTime;
@@ -35,11 +35,6 @@ float speedIncreaseTimer = 0.0f;
 const float speedIncreaseInterval = 5.0f;
 const float speedMultiplier = 1.1f;
 
-
-ScoreManager* ScoreManager::instance = nullptr;
-LevelManager* LevelManager::instance = nullptr;
-SoundManager* SoundManager::instance = nullptr;
-
 enum GameState
 {
     COUNTDOWN,
@@ -60,7 +55,7 @@ void finish_game();
 
 int main()
 {
-    window = new sf::RenderWindow(sf::VideoMode(500, 600), "Arkanoide");
+    window = new sf::RenderWindow(sf::VideoMode(450, 600), "Arkanoide");
     window->setFramerateLimit(60);
  
     sf::Clock clock;
@@ -117,52 +112,53 @@ int main()
 
 void init()
 {
+    float centerX = (float)(window->getSize().x / 2);
+    float centerY = (float)(window->getSize().y / 2);
+
     // Paddle initialization
     string paddleTexturePath = "Assets/Sprites/paddle.png";
-    sf::Vector2f paddlePos(225, 500);
-    paddle = new Paddle(paddleTexturePath, paddlePos, 200.0f);
-    //paddle->set_scale(2.0f, 2.0f);
+    sf::Vector2f paddlePos(centerX, 550);
+    paddle = new Paddle(paddleTexturePath, paddlePos, 250.0f);
 
     // Ball initialization
     string ballTexturePath = "Assets/Sprites/ball.png";
-    sf::Vector2f ballPos(225, 300);
+    sf::Vector2f ballPos(centerX, 300);
     ball = new Ball(ballTexturePath, ballPos, 200.0f);
     ball->set_velocity(sf::Vector2f(0, ball->get_current_speed()));
     ball->set_max_speed(1800.0f);
     ball->set_scale(0.25f, 0.25f);
 
     // Labels initialization
-    if (!font.loadFromFile("Assets/Fonts/Pixellari.ttf"))
+    if (!font.loadFromFile("Assets/Fonts/ARCADE_I.TTF"))
     {
         cout << "Could not load font" << endl;
     }
     // ScoreLabel
-    scoreLabel = new Label(font, 20, sf::Vector2f(10, 10),
-        sf::Color::White, "Score: 0", false);
+    scoreLabel = new Label(font, 15, sf::Vector2f(10, 10),
+        sf::Color::White, "Score:0", false);
     // LivesLabel
-    livesLabel = new Label(font, 20, sf::Vector2f(400, 10),
-        sf::Color::White, "Lives: 3", false);
+    livesLabel = new Label(font, 15, sf::Vector2f(320, 10),
+        sf::Color::White, "Lives:" + to_string(lives), false);
     // GameOverLabel
-    float centerPosX = (float)(window->getSize().x / 2);
-    float centerPosY = (float)(window->getSize().y / 2);
-    gameOverLabel = new Label(font, 40, sf::Vector2f(centerPosX, centerPosY - 80),
+    gameOverLabel = new Label(font, 35, sf::Vector2f(centerX, centerY - 60),
         sf::Color::White, "GAME OVER", true);
     // CountdownLabel
-    countdownLabel = new Label(font, 40, sf::Vector2f(centerPosX, centerPosY),
+    countdownLabel = new Label(font, 40, sf::Vector2f(centerX, centerY),
         sf::Color::White, "READY", true);
     // ResetLabel
-    resetLabel = new Label(font, 25, sf::Vector2f(centerPosX, centerPosY + 80),
+    resetLabel = new Label(font, 16, sf::Vector2f(centerX, centerY + 80),
         sf::Color::White, "", true);
     //GameCompleteLabel
-    gameCompleteLabel = new Label(font, 45, sf::Vector2f(centerPosX, centerPosY - 150),
-        sf::Color::White, "   GAME COMPLETE!\nCONGRATULATIONS!", true);
+    gameCompleteLabel = new Label(font, 26, sf::Vector2f(centerX, centerY - 150),
+        sf::Color::White, " GAME COMPLETE!\nCONGRATULATIONS!", true);
 
 
-    // Init SoundManager
-    SoundManager::get_instance()->init();
+    // Init Managers
+    SoundManager::get_instance().init();
+    ScoreManager::get_instance().init();
+    LevelManager::get_instance().init();
 
-
-    LevelManager::get_instance()->load_level(0);
+    LevelManager::get_instance().load_level(0);
 }
 
 void handle_inputs(sf::Event ev)
@@ -227,11 +223,43 @@ void update(float dt)
         return;
     }
 
-    paddle->update(dt);
-    paddle->clamp_position(window);
-    ball->update(dt);
-    ball->clamp_position(window);
+    // Substeps to avoid tunneling
+    float subDt = dt / subSteps;
+    for (int i = 0; i < subSteps; ++i)
+    {
+        paddle->update(subDt);
+        paddle->clamp_position(window);
+        ball->update(subDt);
+        ball->clamp_position(window);
 
+        // Paddle-Ball collision
+        if (check_collision(paddle->get_sprite().getGlobalBounds(),
+            ball->get_sprite().getGlobalBounds()))
+        {
+            ball->ricochet(paddle);
+
+            //SoundManager::get_instance().play_boop();
+        }
+
+        // Block-Ball collision
+        auto blockCollision = LevelManager::get_instance().check_block_collision(ball->get_sprite().getGlobalBounds());
+        if (blockCollision.has_value())
+        {
+            ball->bounce_from(blockCollision.value().blockBounds);
+
+            if (blockCollision.value().isBreakable)
+            {
+                ScoreManager::get_instance().add_to_score(10);
+                scoreLabel->set_string("Score:" + to_string(ScoreManager::get_instance().get_score()));
+            
+                //SoundManager::get_instance().play_beep();
+            }
+            else
+            {
+                //SoundManager::get_instance().play_cling();
+            }
+        }
+    }
 
     // Ball speed incrementation
     speedIncreaseTimer += dt;
@@ -246,42 +274,19 @@ void update(float dt)
         }
     }
 
-
-    // Paddle-Ball collision
-    if (check_collision(paddle->get_sprite().getGlobalBounds(), 
-        ball->get_sprite().getGlobalBounds()))
-    {
-        ball->ricochet(paddle);
-
-        SoundManager::get_instance()->play_boop();
-    }
-
-
-    // Block-Ball collision
-    auto blockBounds = LevelManager::get_instance()->check_block_collision(ball->get_sprite().getGlobalBounds());
-    if (blockBounds.has_value())
-    {
-        ball->bounce_from(blockBounds.value());
-
-        SoundManager::get_instance()->play_beep();
-
-        ScoreManager::get_instance()->add_to_score(10);
-        scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
-    }
-
     // Check for level complete
-    if (LevelManager::get_instance()->is_level_complete())
+    if (LevelManager::get_instance().is_level_complete())
     {
         currentLevel++;
 
-        if (currentLevel >= LevelManager::get_instance()->get_num_levels())
+        if (currentLevel >= LevelManager::get_instance().get_num_levels())
         {
             state = GameState::GAME_COMPLETE;
             return;
         }
         else
         {
-            LevelManager::get_instance()->load_level(currentLevel);
+            LevelManager::get_instance().load_level(currentLevel);
 
             ball->reset();
             paddle->set_position(paddle->get_start_position());
@@ -296,10 +301,10 @@ void update(float dt)
     // Loose life
     if (ball->get_sprite().getPosition().y > window->getSize().y)
     {
-        SoundManager::get_instance()->play_lose();
+        SoundManager::get_instance().play_lose();
 
         lives--;
-        livesLabel->set_string("Lives: " + to_string(lives));
+        livesLabel->set_string("Lives:" + to_string(lives));
 
         if (lives < 1)
         {
@@ -327,11 +332,11 @@ bool check_collision(sf::FloatRect rect1, sf::FloatRect rect2)
 
 void draw()
 {
-    LevelManager::get_instance()->draw(window);
+    LevelManager::get_instance().draw(window);
 
     if (state == GameState::GAME_OVER)
     {
-        resetLabel->set_string("\t\tYour Score: " + to_string(ScoreManager::get_instance()->get_score()) +
+        resetLabel->set_string("\t Your Score:" + to_string(ScoreManager::get_instance().get_score()) +
             "\n\nPress SpaceBar to Reset");
 
         gameOverLabel->draw(window);
@@ -341,7 +346,7 @@ void draw()
     }
     else if (state == GameState::GAME_COMPLETE)
     {
-        resetLabel->set_string("\t\tYour Score: " + to_string(ScoreManager::get_instance()->get_score()) +
+        resetLabel->set_string("\t Your Score:" + to_string(ScoreManager::get_instance().get_score()) +
             "\n\nPress SpaceBar to Reset");
 
         resetLabel->draw(window);
@@ -373,12 +378,12 @@ void reset()
     currentTime = 0.0f;
     prevTime = 0.0f;
     lives = maxLives;
-    ScoreManager::get_instance()->reset_score();
+    ScoreManager::get_instance().reset_score();
 
-    livesLabel->set_string("Lives: " + to_string(lives));
-    scoreLabel->set_string("Score: " + to_string(ScoreManager::get_instance()->get_score()));
+    livesLabel->set_string("Lives:" + to_string(lives));
+    scoreLabel->set_string("Score:" + to_string(ScoreManager::get_instance().get_score()));
 
-    LevelManager::get_instance()->load_level(0);
+    LevelManager::get_instance().load_level(0);
 
     state = GameState::COUNTDOWN;
 }

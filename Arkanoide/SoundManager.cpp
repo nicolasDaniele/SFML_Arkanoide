@@ -15,6 +15,12 @@ bool SoundManager::init()
         return false;
     }
 
+    if (!load_sound(clingBuffer, clingSfx, "Assets/Sounds/cling.ogg"))
+    {
+        std::cout << "SoundManager: could not load clingSfx\n";
+        return false;
+    }
+
     if (!load_sound(loseBuffer, loseSfx, "Assets/Sounds/lose.ogg"))
     {
         std::cout << "SoundManager: could not load loseSfx\n";
@@ -44,6 +50,11 @@ void SoundManager::play_boop()
 void SoundManager::play_beep()
 {
     beepSfx.play();
+}
+
+void SoundManager::play_cling()
+{
+    clingSfx.play();
 }
 
 void SoundManager::play_lose()

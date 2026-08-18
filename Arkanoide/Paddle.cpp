@@ -12,8 +12,10 @@ void Paddle::draw(sf::RenderWindow* window)
 
 void Paddle::clamp_position(sf::RenderWindow* window)
 {
-	float minXPos = 0;
-	float maxXPos = (float)(window->getSize().x - sprite.getGlobalBounds().width);
+	float halfWidth = sprite.getGlobalBounds().width / 2.0f;
+
+	float minXPos = halfWidth;
+	float maxXPos = window->getSize().x - halfWidth;
 
 	if (sprite.getPosition().x < minXPos)
 	{

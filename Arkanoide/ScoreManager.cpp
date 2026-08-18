@@ -1,6 +1,6 @@
 #include "ScoreManager.h"
 
-ScoreManager::ScoreManager()
+void ScoreManager::init()
 {
 	score = 0;
 }

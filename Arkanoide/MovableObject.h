@@ -16,9 +16,12 @@ protected:
 	float maxSpeed = 500.0f;
 
 public:
-	MovableObject(string textureFilePath, sf::Vector2f _startPosition
-		, float _initialSpeed) :
-		Entity(textureFilePath, _startPosition) {
+	MovableObject(string textureFilePath, sf::Vector2f _startPosition ,
+		float _initialSpeed) : Entity(textureFilePath, _startPosition)
+	{
+		sf::FloatRect bounds = sprite.getLocalBounds();
+		sprite.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
 		initialSpeed = currentSpeed = _initialSpeed;
 	}
 	virtual ~MovableObject() { }
