@@ -10,7 +10,7 @@ void ScoreManager::add_to_score(int addedScore)
 	score += addedScore;
 }
 
-int ScoreManager::get_score()
+int ScoreManager::get_score() const
 {
 	return score;
 }

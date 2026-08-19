@@ -1,6 +1,6 @@
 #include "MovableObject.h"
 
-void MovableObject::add_move_vector(const sf::Vector2f vec)
+void MovableObject::add_move_vector(/*const sf::Vector2f vec*/)
 {
     sprite.setPosition(sprite.getPosition() + velocity);
 }

@@ -1,17 +1,16 @@
 #include "Label.h"
 
-Label::Label(sf::Font _font, int size, sf::Vector2f position,
-	sf::Color color, std::string content, bool _centered)
+Label::Label(const sf::Font& font, int size, sf::Vector2f position,
+	sf::Color color, const std::string& content, bool _centered)
+	: text(font), centered(_centered)
 {
-	font = _font;
 	text.setCharacterSize(size);
-	text.setPosition(position.x, position.y);
+	text.setPosition(position);
 	text.setFillColor(color);
 	text.setString(content);
-	centered = _centered;
 }
 
-void Label::set_string(std::string newString)
+void Label::set_string(const std::string& newString)
 {
 	text.setString(newString);
 }
@@ -20,9 +19,11 @@ void Label::draw(sf::RenderWindow* window)
 {
 	if (centered)
 	{
-		text.setOrigin(text.getGlobalBounds().width / 2.f, text.getGlobalBounds().height / 2.f);
+		sf::FloatRect bounds = text.getGlobalBounds();
+
+		text.setOrigin(sf::Vector2f(bounds.size.x / 2.f,
+			bounds.size.y / 2.f));
 	}
 
-	text.setFont(font);
 	window->draw(text);
 }

@@ -1,4 +1,5 @@
 #include <random>
+#include <cmath>
 #include "LevelManager.h"
 #include "Block.h"
 
@@ -16,7 +17,7 @@ void LevelManager::init()
                 "###############",
                 "###############",
                 "###############"
-            }  
+            }
         },
 
         {
@@ -74,7 +75,7 @@ void LevelManager::init()
             }
         },
         {
-             {
+            {
                 "###############",
                 "##UUU#####UUU##",
                 "#UUUUUU#UUUUUU#",
@@ -103,7 +104,7 @@ void LevelManager::init()
 
 void LevelManager::load_level(int levelIndex)
 {
-    if (levelIndex < 0 || levelIndex >= levels.size())
+    if (levelIndex < 0 || levelIndex >= static_cast<int>(levels.size()))
     {
         return;
     }
@@ -125,26 +126,26 @@ void LevelManager::load_level(int levelIndex)
 
     sf::Vector2f offsetPos(3, 50);
 
-    for (int i = 0; i < level.layout.size(); i++)
+    for (int i = 0; i < static_cast<int>(level.layout.size()); i++)
     {
         float hue = (360.0f / level.layout.size()) * i;
         float s = distrib_s(gen);
         float v = distrib_v(gen);
 
-        sf::Color roUColor = from_hsv(hue, s, v);
+        sf::Color rowColor = from_hsv(hue, s, v);
 
-        for (int j = 0; j < level.layout[i].size(); j++)
+        for (int j = 0; j < static_cast<int>(level.layout[i].size()); j++)
         {
             BlockType blockType = get_block_type(level.layout[i][j]);
             if (blockType == BlockType::Empty)
                 continue;
 
-            Block* block = create_block(blockType, roUColor, { 0.0f, 0.0f });
+            Block* block = create_block(blockType, rowColor, { 0.0f, 0.0f });
             if (block == nullptr)
                 continue;
 
-            float blockPosX = block->get_size().x * 1.1f * j;
-            float blockPosY = block->get_size().y * 1.1f * i;
+            float blockPosX = block->get_texture_rect().x * 1.1f * j;
+            float blockPosY = block->get_texture_rect().y * 1.1f * i;
 
             block->set_position(offsetPos + sf::Vector2f(blockPosX, blockPosY));
 
@@ -158,10 +159,12 @@ Block* LevelManager::create_block(BlockType type, sf::Color color, sf::Vector2f 
     switch (type)
     {
     case BlockType::Normal:
-        return new Block(color, position, { 27, 15 }, true);
+        return new Block("Assets/Sprites/block.png", position, 
+            color, { 1.f, 1.f }, true);
 
     case BlockType::Unbreakable:
-        return new Block(sf::Color(200, 200, 200), position, { 27, 15 }, false);
+        return new Block("Assets/Sprites/block.png", position, 
+            sf::Color::White, { 1.f, 1.f }, false);
 
     default:
         return nullptr;
@@ -210,13 +213,13 @@ sf::Color LevelManager::from_hsv(float hue, float saturation, float value)
 
 std::optional<BlockCollision> LevelManager::check_block_collision(sf::FloatRect bounds)
 {
-    for (int i = 0; i < blocks.size(); i++)
+    for (int i = 0; i < static_cast<int>(blocks.size()); i++)
     {
-        if (blocks[i]->get_rectangle().getGlobalBounds().intersects(bounds))
+        if (blocks[i]->get_sprite().getGlobalBounds().findIntersection(bounds).has_value())
         {
             BlockCollision collision;
 
-            sf::FloatRect blockBounds = blocks[i]->get_rectangle().getGlobalBounds();
+            sf::FloatRect blockBounds = blocks[i]->get_sprite().getGlobalBounds();
 
             collision.blockBounds = blockBounds;
             collision.isBreakable = blocks[i]->is_breakable();
@@ -247,7 +250,7 @@ bool LevelManager::is_level_complete() const
 
 int LevelManager::get_num_levels() const
 {
-    return levels.size();
+    return static_cast<int>(levels.size());
 }
 
 LevelManager::~LevelManager()

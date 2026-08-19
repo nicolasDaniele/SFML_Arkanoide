@@ -1,42 +1,72 @@
 #include "Entity.h"
 
-Entity::Entity(string textureFilePath, sf::Vector2f _startPosition)
-{
-    if (!texture.loadFromFile(textureFilePath))
-    {
-        cout << "ERROR: paddle_texture could not be loaded. " << endl;
-    }
+#include <iostream>
 
-    sprite.setTexture(texture);
-    startPosition = _startPosition;
-    sprite.setPosition(_startPosition);
+Entity::Entity(const std::string& _textureFilePath, const sf::Vector2f _startPosition,
+	const sf::Vector2f startScale)	: textureFilePath(_textureFilePath), texture(), sprite(texture)
+{
+	texture = sf::Texture(textureFilePath);
+
+	if (!texture.loadFromFile(textureFilePath))
+	{
+		std::cout << "ERROR: could not load texture file: "
+			<< textureFilePath << "\n";
+	}
+
+	sprite.setTexture(texture);
+	startPosition = _startPosition;
+	sprite.setPosition(_startPosition);
+
+	sprite.setTextureRect(sf::IntRect({ 0, 0 },
+			{
+				static_cast<int>(texture.getSize().x),
+				static_cast<int>(texture.getSize().y)
+			}));
+
+	sprite.setScale(startScale);
+}
+
+void Entity::draw(sf::RenderWindow* window)
+{
+	window->draw(sprite);
 }
 
 void Entity::set_scale(const float xScale, const float yScale)
 {
-    sprite.setScale(xScale, yScale);
+	sprite.setScale(sf::Vector2f(xScale, yScale));
 }
 
 void Entity::set_position(const sf::Vector2f newPosition)
 {
-    sprite.setPosition(newPosition);
+	sprite.setPosition(newPosition);
 }
+
 void Entity::set_position(const float xPosition, const float yPosition)
 {
-    sprite.setPosition(xPosition, yPosition);
+	sprite.setPosition(sf::Vector2f(xPosition, yPosition));
 }
 
-sf::Sprite Entity::get_sprite() const
+const sf::Sprite& Entity::get_sprite() const
 {
-    return sprite;
+	return sprite;
 }
 
-sf::Texture Entity::get_texture() const
+const sf::Texture& Entity::get_texture() const
 {
-    return  texture;
+	return texture;
+}
+
+sf::Vector2f Entity::get_scale() const
+{
+	return sprite.getScale();
+}
+
+sf::Vector2i Entity::get_texture_rect() const
+{
+	return sprite.getTextureRect().size;
 }
 
 sf::Vector2f Entity::get_start_position() const
 {
-    return startPosition;
+	return startPosition;
 }

@@ -2,33 +2,29 @@
 
 void Paddle::update(float dt)
 {
-	sprite.move(velocity * dt);
-}
-
-void Paddle::draw(sf::RenderWindow* window)
-{
-	window->draw(get_sprite());
+    sprite.move(velocity * dt);
 }
 
 void Paddle::clamp_position(sf::RenderWindow* window)
 {
-	float halfWidth = sprite.getGlobalBounds().width / 2.0f;
+    const float halfWidth = sprite.getGlobalBounds().size.x / 2.0f;
+    const float minXPos = halfWidth;
+    const float maxXPos = static_cast<float>(window->getSize().x) - halfWidth;
 
-	float minXPos = halfWidth;
-	float maxXPos = window->getSize().x - halfWidth;
+    const sf::Vector2f position = sprite.getPosition();
 
-	if (sprite.getPosition().x < minXPos)
-	{
-		sprite.setPosition(minXPos, sprite.getPosition().y);
-	}
+    if (position.x < minXPos)
+    {
+        sprite.setPosition({ minXPos, position.y });
+    }
 
-	if (sprite.getPosition().x > maxXPos)
-	{
-		sprite.setPosition(maxXPos, sprite.getPosition().y);
-	}
+    if (position.x > maxXPos)
+    {
+        sprite.setPosition({ maxXPos, position.y });
+    }
 }
 
 void Paddle::reset()
 {
-	set_position(startPosition);
+    set_position(startPosition);
 }

@@ -1,21 +1,16 @@
 #pragma once
 
-#include <iostream>
 #include <SFML/Graphics.hpp>
 #include "MovableObject.h"
 
-using namespace std;
-
 class Paddle : public MovableObject
 {
-
 public:
-	Paddle(string textureFilePath, sf::Vector2f _startPosition, float _initialSpeed) :
-		MovableObject(textureFilePath, _startPosition, _initialSpeed) {	}
-	virtual ~Paddle() { }
+    Paddle(const std::string& textureFilePath, sf::Vector2f startPosition,
+        float initialSpeed) : MovableObject(textureFilePath, startPosition, initialSpeed) { }
+    ~Paddle() override = default;
 
-	void update(float dt) override;
-	void draw(sf::RenderWindow* window) override;
-	void clamp_position(sf::RenderWindow* window) override;
-	void reset() override;
+    void update(float dt) override;
+    void clamp_position(sf::RenderWindow* window) override;
+    void reset() override;
 };

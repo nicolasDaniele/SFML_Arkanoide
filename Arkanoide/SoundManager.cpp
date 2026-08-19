@@ -3,61 +3,67 @@
 
 bool SoundManager::init()
 {
-    if (!load_sound(boopBuffer, boopSfx, "Assets/Sounds/boop.ogg"))
-    {
-        std::cout << "SoundManager: could not load boopSFX\n";
-        return false;
-    }
-        
-    if (!load_sound(beepBuffer, beepSfx, "Assets/Sounds/beep.ogg"))
-    {
-        std::cout << "SoundManager: could not load beepSfx\n";
-        return false;
-    }
+	if (!load_sound(boopBuffer, boopSfx, "Assets/Sounds/boop.ogg"))
+	{
+		std::cout << "SoundManager: could not load boopSFX\n";
+		return false;
+	}
 
-    if (!load_sound(clingBuffer, clingSfx, "Assets/Sounds/cling.ogg"))
-    {
-        std::cout << "SoundManager: could not load clingSfx\n";
-        return false;
-    }
+	if (!load_sound(beepBuffer, beepSfx, "Assets/Sounds/beep.ogg"))
+	{
+		std::cout << "SoundManager: could not load beepSfx\n";
+		return false;
+	}
 
-    if (!load_sound(loseBuffer, loseSfx, "Assets/Sounds/lose.ogg"))
-    {
-        std::cout << "SoundManager: could not load loseSfx\n";
-        return false;
-    }
+	if (!load_sound(clingBuffer, clingSfx, "Assets/Sounds/cling.ogg"))
+	{
+		std::cout << "SoundManager: could not load clingSfx\n";
+		return false;
+	}
 
-    return true;
+	if (!load_sound(loseBuffer, loseSfx, "Assets/Sounds/lose.ogg"))
+	{
+		std::cout << "SoundManager: could not load loseSfx\n";
+		return false;
+	}
+
+	return true;
 }
 
-bool SoundManager::load_sound(sf::SoundBuffer& buffer, sf::Sound& sound, const std::string& path)
+bool SoundManager::load_sound(sf::SoundBuffer& buffer,
+	std::optional<sf::Sound>& sound, const std::string& path)
 {
-    if (!buffer.loadFromFile(path))
-    {
-        std::cout << "Could not load sound: " << path << "\n";
-        return false;
-    }
-    
-    sound.setBuffer(buffer);
-    return true;
+	if (!buffer.loadFromFile(path))
+	{
+		std::cout << "Could not load sound: " << path << "\n";
+		return false;
+	}
+
+	sound.emplace(buffer);
+
+	return true;
 }
 
 void SoundManager::play_boop()
 {
-    boopSfx.play();
+	if (boopSfx.has_value())
+		boopSfx->play();
 }
 
 void SoundManager::play_beep()
 {
-    beepSfx.play();
+	if (beepSfx.has_value())
+		beepSfx->play();
 }
 
 void SoundManager::play_cling()
 {
-    clingSfx.play();
+	if (clingSfx.has_value())
+		clingSfx->play();
 }
 
 void SoundManager::play_lose()
 {
-    loseSfx.play();
+	if (loseSfx.has_value())
+		loseSfx->play();
 }
