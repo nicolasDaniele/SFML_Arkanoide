@@ -1,10 +1,17 @@
 #include <random>
 #include <cmath>
+#include <iostream>
 #include "LevelManager.h"
 #include "Block.h"
 
 void LevelManager::init()
 {
+    if (!blockTexture.loadFromFile("Assets/Sprites/block.png"))
+    {
+        std::cout << "LevelManager: could not load block texture\n";
+        return;
+    }
+
     levels =
     {
         {
@@ -159,11 +166,11 @@ Block* LevelManager::create_block(BlockType type, sf::Color color, sf::Vector2f 
     switch (type)
     {
     case BlockType::Normal:
-        return new Block("Assets/Sprites/block.png", position, 
+        return new Block(blockTexture, position, 
             color, { 1.f, 1.f }, true);
 
     case BlockType::Unbreakable:
-        return new Block("Assets/Sprites/block.png", position, 
+        return new Block(blockTexture, position, 
             sf::Color::White, { 1.f, 1.f }, false);
 
     default:

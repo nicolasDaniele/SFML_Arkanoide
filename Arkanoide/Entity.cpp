@@ -15,7 +15,6 @@ Entity::Entity(const std::string& _textureFilePath, const sf::Vector2f _startPos
 
 	sprite.setTexture(texture);
 	startPosition = _startPosition;
-	sprite.setPosition(_startPosition);
 
 	sprite.setTextureRect(sf::IntRect({ 0, 0 },
 			{
@@ -23,7 +22,20 @@ Entity::Entity(const std::string& _textureFilePath, const sf::Vector2f _startPos
 				static_cast<int>(texture.getSize().y)
 			}));
 
+	sprite.setPosition(_startPosition);
 	sprite.setScale(startScale);
+}
+
+Entity::Entity(const sf::Texture& texture, const sf::Vector2f _startPosition)
+	: texture(texture), sprite(texture), startPosition(startPosition)
+{
+	sprite.setTextureRect(sf::IntRect({ 0, 0 },
+			{
+				static_cast<int>(texture.getSize().x),
+				static_cast<int>(texture.getSize().y)
+			}));
+
+	sprite.setPosition(_startPosition);
 }
 
 void Entity::draw(sf::RenderWindow* window)

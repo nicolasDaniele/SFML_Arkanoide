@@ -8,6 +8,7 @@ class Entity
 public:
 	Entity(const std::string& _textureFilePath, const sf::Vector2f _startPosition,
 		const sf::Vector2f startScale = { 1.f, 1.f });
+	Entity(const sf::Texture& texture, const sf::Vector2f _startPosition);
 	virtual ~Entity() = default;
 
 	virtual void update(float dt) = 0;

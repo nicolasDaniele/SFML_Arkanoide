@@ -51,4 +51,5 @@ private:
 
     std::vector<Level> levels;
     std::vector<Block*> blocks;
+    sf::Texture blockTexture;
 };
