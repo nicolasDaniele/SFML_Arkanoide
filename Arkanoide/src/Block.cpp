@@ -2,9 +2,8 @@
 
 Block::Block(const sf::Texture& texture, const sf::Vector2f _startPosition,
     const sf::Color color, const sf::Vector2f startScale, bool _isBreakable) :
-	Entity(texture, startPosition)
+	Entity(texture, _startPosition)
 {
-	startPosition = _startPosition;
 	isBreakable = _isBreakable;
 
 	sprite.setColor(color);

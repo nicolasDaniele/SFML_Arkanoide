@@ -27,7 +27,7 @@ Entity::Entity(const std::string& _textureFilePath, const sf::Vector2f _startPos
 }
 
 Entity::Entity(const sf::Texture& texture, const sf::Vector2f _startPosition)
-	: texture(texture), sprite(texture), startPosition(startPosition)
+	: texture(texture), sprite(texture), startPosition(_startPosition)
 {
 	sprite.setTextureRect(sf::IntRect({ 0, 0 },
 			{
