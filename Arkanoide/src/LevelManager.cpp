@@ -130,6 +130,7 @@ void LevelManager::load_level(int levelIndex)
 
     std::uniform_real_distribution<float> distrib_s(0.8f, 1.0f);
     std::uniform_real_distribution<float> distrib_v(0.4f, 1.0f);
+    std::uniform_real_distribution<float> distrib_powerup(0.0f, 1.0f);
 
     sf::Vector2f offsetPos(3, 50);
 
@@ -147,7 +148,10 @@ void LevelManager::load_level(int levelIndex)
             if (blockType == BlockType::Empty)
                 continue;
 
-            Block* block = create_block(blockType, rowColor, { 0.0f, 0.0f });
+            bool dropsPowerUp = (blockType == BlockType::Normal) &&
+                (distrib_powerup(gen) < powerUpChance);
+
+            Block* block = create_block(blockType, rowColor, { 0.0f, 0.0f }, dropsPowerUp);
             if (block == nullptr)
                 continue;
 
@@ -161,17 +165,17 @@ void LevelManager::load_level(int levelIndex)
     }
 }
 
-Block* LevelManager::create_block(BlockType type, sf::Color color, sf::Vector2f position)
+Block* LevelManager::create_block(BlockType type, sf::Color color, sf::Vector2f position, bool dropsPowerUp)
 {
     switch (type)
     {
     case BlockType::Normal:
         return new Block(blockTexture, position, 
-            color, { 1.f, 1.f }, true);
+            color, { 1.f, 1.f }, true, dropsPowerUp);
 
     case BlockType::Unbreakable:
         return new Block(blockTexture, position, 
-            sf::Color::White, { 1.f, 1.f }, false);
+            sf::Color::White, { 1.f, 1.f }, false, false);
 
     default:
         return nullptr;
@@ -230,6 +234,7 @@ std::optional<BlockCollision> LevelManager::check_block_collision(sf::FloatRect 
 
             collision.blockBounds = blockBounds;
             collision.isBreakable = blocks[i]->is_breakable();
+            collision.shouldSpawnPowerUp = blocks[i]->is_breakable() && blocks[i]->drops_power_up();
 
             if (blocks[i]->is_breakable())
             {

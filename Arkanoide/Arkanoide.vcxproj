@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Libraries\SFML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(SolutionDir)Libraries\SFML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -146,27 +146,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Ball.cpp" />
-    <ClCompile Include="Block.cpp" />
-    <ClCompile Include="Entity.cpp" />
-    <ClCompile Include="Label.cpp" />
-    <ClCompile Include="LevelManager.cpp" />
-    <ClCompile Include="MovableObject.cpp" />
-    <ClCompile Include="Paddle.cpp" />
-    <ClCompile Include="ScoreManager.cpp" />
-    <ClCompile Include="SoundManager.cpp" />
+    <ClCompile Include="src\Ball.cpp" />
+    <ClCompile Include="src\Block.cpp" />
+    <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\Game.cpp" />
+    <ClCompile Include="src\Label.cpp" />
+    <ClCompile Include="src\LevelManager.cpp" />
+    <ClCompile Include="src\LivesManager.cpp" />
+    <ClCompile Include="src\MovableObject.cpp" />
+    <ClCompile Include="src\Paddle.cpp" />
+    <ClCompile Include="src\PowerUp.cpp" />
+    <ClCompile Include="src\PowerUpManager.cpp" />
+    <ClCompile Include="src\ScoreManager.cpp" />
+    <ClCompile Include="src\SoundManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Ball.h" />
-    <ClInclude Include="Block.h" />
-    <ClInclude Include="Entity.h" />
-    <ClInclude Include="Label.h" />
-    <ClInclude Include="LevelManager.h" />
-    <ClInclude Include="MovableObject.h" />
-    <ClInclude Include="Paddle.h" />
-    <ClInclude Include="ScoreManager.h" />
-    <ClInclude Include="SoundManager.h" />
+    <ClInclude Include="src\Ball.h" />
+    <ClInclude Include="src\Block.h" />
+    <ClInclude Include="src\Entity.h" />
+    <ClInclude Include="src\Label.h" />
+    <ClInclude Include="src\LevelManager.h" />
+    <ClInclude Include="src\LivesManager.h" />
+    <ClInclude Include="src\MovableObject.h" />
+    <ClInclude Include="src\Paddle.h" />
+    <ClInclude Include="src\PowerUp.h" />
+    <ClInclude Include="src\PowerUpManager.h" />
+    <ClInclude Include="src\ScoreManager.h" />
+    <ClInclude Include="src\SoundManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

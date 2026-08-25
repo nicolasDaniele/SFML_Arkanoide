@@ -1,8 +1,10 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <cstdlib>
+#include <cmath>
 #include <ctime>
 
 #include "Paddle.h"
@@ -11,15 +13,21 @@
 #include "ScoreManager.h"
 #include "LevelManager.h"
 #include "SoundManager.h"
+#include "LivesManager.h"
+#include "PowerUpManager.h"
 #include "Label.h"
 
 sf::RenderWindow* window;
 Paddle* paddle;
-Ball* ball;
+std::vector<Ball*> balls;
 
-const int maxLives = 5;
+// Ball spawn parameters (used to create new balls, e.g. when a life is lost)
+const std::string ballTexturePath = "Assets/Sprites/ball.png";
+const float ballInitialSpeed = 200.0f;
+const float ballMaxSpeed = 1800.0f;
+sf::Vector2f ballStartPosition;
+
 const int subSteps = 4;
-int lives;
 float currentTime;
 float prevTime;
 int currentLevel = 0;
@@ -59,6 +67,10 @@ bool check_collision(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
 void draw();
 void reset();
 void finish_game();
+Ball* create_ball(sf::Vector2f position);
+Ball* clone_ball(Ball* source, float angleOffsetDegrees);
+void clear_balls();
+void handle_collected_power_up(PowerUpType type);
 
 
 int main()
@@ -69,7 +81,6 @@ int main()
 
     sf::Clock clock;
 
-    lives = maxLives;
     currentTime = 0.0f;
     prevTime = 0.0f;
 
@@ -134,12 +145,10 @@ void init()
     paddle = new Paddle(paddleTexturePath, paddlePos, 250.0f);
 
     // Ball initialization
-    std::string ballTexturePath = "Assets/Sprites/ball.png";
-    sf::Vector2f ballPos(centerX, 300.0f);
-    ball = new Ball(ballTexturePath, ballPos, 200.0f);
-    ball->set_velocity(sf::Vector2f(0.0f, ball->get_current_speed()));
-    ball->set_max_speed(1800.0f);
-    ball->set_scale(0.25f, 0.25f);
+    ballStartPosition = sf::Vector2f(centerX, 300.0f);
+    balls.push_back(create_ball(ballStartPosition));
+
+    LivesManager::get_instance().init();
 
     // Font initialization
     try
@@ -158,7 +167,7 @@ void init()
 
     // LivesLabel
     livesLabel = new Label(*font, 15, sf::Vector2f(320.0f, 10.0f),
-                    sf::Color::White, "Lives:" + std::to_string(lives), false);
+                    sf::Color::White, "Lives:" + std::to_string(LivesManager::get_instance().get_lives()), false);
 
     // GameOverLabel
     gameOverLabel = new Label(*font, 35, sf::Vector2f(centerX, centerY - 60.0f),
@@ -180,6 +189,7 @@ void init()
     SoundManager::get_instance().init();
     ScoreManager::get_instance().init();
     LevelManager::get_instance().init();
+    PowerUpManager::get_instance().init();
 
     LevelManager::get_instance().load_level(0);
 }
@@ -259,42 +269,65 @@ void update(float dt)
         paddle->update(subDt);
         paddle->clamp_position(window);
 
-        ball->update(subDt);
-        ball->clamp_position(window);
-
-        // Paddle-Ball collision
-        if (check_collision(
-            paddle->get_sprite().getGlobalBounds(),
-            ball->get_sprite().getGlobalBounds()))
+        for (Ball* currentBall : balls)
         {
-            ball->ricochet(paddle);
+            currentBall->update(subDt);
+            currentBall->clamp_position(window);
 
-             SoundManager::get_instance().play_boop();
-        }
-
-        // Block-Ball collision
-        auto blockCollision =
-            LevelManager::get_instance().check_block_collision(
-                ball->get_sprite().getGlobalBounds());
-
-        if (blockCollision.has_value())
-        {
-            ball->bounce_from(blockCollision.value().blockBounds);
-
-            if (blockCollision.value().isBreakable)
+            // Paddle-Ball collision
+            if (check_collision(
+                paddle->get_sprite().getGlobalBounds(),
+                currentBall->get_sprite().getGlobalBounds()))
             {
-                ScoreManager::get_instance().add_to_score(10);
+                currentBall->ricochet(paddle);
 
-                scoreLabel->set_string("Score:" + 
-                    std::to_string(ScoreManager::get_instance().get_score()));
-
-                 SoundManager::get_instance().play_beep();
+                SoundManager::get_instance().play_boop();
             }
-            else
+
+            // Block-Ball collision
+            auto blockCollision =
+                LevelManager::get_instance().check_block_collision(
+                    currentBall->get_sprite().getGlobalBounds());
+
+            if (blockCollision.has_value())
             {
-                 SoundManager::get_instance().play_cling();
+                currentBall->bounce_from(blockCollision.value().blockBounds);
+
+                if (blockCollision.value().isBreakable)
+                {
+                    ScoreManager::get_instance().add_to_score(10);
+
+                    scoreLabel->set_string("Score:" +
+                        std::to_string(ScoreManager::get_instance().get_score()));
+
+                    SoundManager::get_instance().play_beep();
+
+                    if (blockCollision.value().shouldSpawnPowerUp)
+                    {
+                        sf::FloatRect blockBounds = blockCollision.value().blockBounds;
+
+                        sf::Vector2f spawnPosition(
+                            blockBounds.position.x + blockBounds.size.x / 2.0f,
+                            blockBounds.position.y + blockBounds.size.y / 2.0f);
+
+                        PowerUpManager::get_instance().spawn(spawnPosition);
+                    }
+                }
+                else
+                {
+                    SoundManager::get_instance().play_cling();
+                }
             }
         }
+    }
+
+    // PowerUps: falling, paddle collision, and PaddleSpeed/PaddleWidth application
+    std::optional<PowerUpType> collectedPowerUp =
+        PowerUpManager::get_instance().update(dt, window, paddle);
+
+    if (collectedPowerUp.has_value())
+    {
+        handle_collected_power_up(collectedPowerUp.value());
     }
 
     // Ball speed incrementation
@@ -304,11 +337,14 @@ void update(float dt)
     {
         speedIncreaseTimer -= speedIncreaseInterval;
 
-        if (!ball->is_at_max_speed())
+        for (Ball* currentBall : balls)
         {
-            float newSpeed = ball->get_current_speed() * speedMultiplier;
+            if (!currentBall->is_at_max_speed())
+            {
+                float newSpeed = currentBall->get_current_speed() * speedMultiplier;
 
-            ball->set_current_speed(newSpeed);
+                currentBall->set_current_speed(newSpeed);
+            }
         }
     }
 
@@ -326,8 +362,14 @@ void update(float dt)
         {
             LevelManager::get_instance().load_level(currentLevel);
 
-            ball->reset();
+            for (Ball* currentBall : balls)
+            {
+                currentBall->reset();
+            }
+
             paddle->set_position(paddle->get_start_position());
+
+            PowerUpManager::get_instance().clear_falling_power_ups();
 
             state = GameState::COUNTDOWN;
 
@@ -337,16 +379,32 @@ void update(float dt)
         }
     }
 
+    // Remove balls that fell below the screen
+    for (auto it = balls.begin(); it != balls.end(); )
+    {
+        if ((*it)->get_sprite().getPosition().y >
+            static_cast<float>(window->getSize().y))
+        {
+            delete *it;
+            it = balls.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
     // Lose life
-    if (ball->get_sprite().getPosition().y >
-        static_cast<float>(window->getSize().y))
+    if (balls.empty())
     {
         SoundManager::get_instance().play_lose();
 
-        lives--;
-        livesLabel->set_string("Lives:" + std::to_string(lives));
+        LivesManager::get_instance().lose_life();
+        livesLabel->set_string("Lives:" + std::to_string(LivesManager::get_instance().get_lives()));
 
-        if (lives < 1)
+        PowerUpManager::get_instance().on_life_lost(paddle);
+
+        if (LivesManager::get_instance().is_game_over())
         {
             state = GameState::GAME_OVER;
             return;
@@ -354,7 +412,9 @@ void update(float dt)
         else
         {
             paddle->reset();
-            ball->reset();
+            balls.push_back(create_ball(ballStartPosition));
+
+            PowerUpManager::get_instance().clear_falling_power_ups();
 
             state = GameState::COUNTDOWN;
 
@@ -408,7 +468,12 @@ void draw()
 
     if (state == GameState::PLAYING)
     {
-        ball->draw(window);
+        for (Ball* currentBall : balls)
+        {
+            currentBall->draw(window);
+        }
+
+        PowerUpManager::get_instance().draw(window);
     }
 
     paddle->draw(window);
@@ -418,15 +483,20 @@ void draw()
 void reset()
 {
     paddle->reset();
-    ball->reset();
+
+    clear_balls();
+    balls.push_back(create_ball(ballStartPosition));
+
+    PowerUpManager::get_instance().clear();
 
     currentTime = 0.0f;
     prevTime = 0.0f;
-    lives = maxLives;
+
+    LivesManager::get_instance().reset_lives();
 
     ScoreManager::get_instance().reset_score();
 
-    livesLabel->set_string("Lives:" + std::to_string(lives));
+    livesLabel->set_string("Lives:" + std::to_string(LivesManager::get_instance().get_lives()));
 
     scoreLabel->set_string("Score:" +
         std::to_string(ScoreManager::get_instance().get_score()));
@@ -446,7 +516,8 @@ void finish_game()
 {
     delete window;
     delete paddle;
-    delete ball;
+
+    clear_balls();
 
     delete scoreLabel;
     delete livesLabel;
@@ -454,4 +525,83 @@ void finish_game()
     delete countdownLabel;
     delete resetLabel;
     delete gameCompleteLabel;
+}
+
+
+Ball* create_ball(sf::Vector2f position)
+{
+    Ball* newBall = new Ball(ballTexturePath, position, ballInitialSpeed);
+    newBall->set_velocity(sf::Vector2f(0.0f, newBall->get_current_speed()));
+    newBall->set_max_speed(ballMaxSpeed);
+    newBall->set_scale(0.25f, 0.25f);
+
+    return newBall;
+}
+
+
+void clear_balls()
+{
+    for (Ball* currentBall : balls)
+    {
+        delete currentBall;
+    }
+
+    balls.clear();
+}
+
+
+Ball* clone_ball(Ball* source, float angleOffsetDegrees)
+{
+    Ball* newBall = create_ball(source->get_sprite().getPosition());
+
+    sf::Vector2f sourceVelocity = source->get_velocity();
+    float angleOffset = angleOffsetDegrees * 3.14159f / 180.0f;
+
+    float newX = sourceVelocity.x * std::cos(angleOffset) -
+        sourceVelocity.y * std::sin(angleOffset);
+
+    float newY = sourceVelocity.x * std::sin(angleOffset) +
+        sourceVelocity.y * std::cos(angleOffset);
+
+    newBall->set_current_speed(source->get_current_speed());
+    newBall->set_velocity(newX, newY);
+
+    return newBall;
+}
+
+
+void handle_collected_power_up(PowerUpType type)
+{
+    switch (type)
+    {
+    case PowerUpType::ExtraLife:
+
+        LivesManager::get_instance().add_life();
+        livesLabel->set_string("Lives:" + std::to_string(LivesManager::get_instance().get_lives()));
+
+        break;
+
+    case PowerUpType::MultiBall:
+        {
+            std::vector<Ball*> newBalls;
+
+            for (Ball* existingBall : balls)
+            {
+                newBalls.push_back(clone_ball(existingBall, 25.0f));
+                newBalls.push_back(clone_ball(existingBall, -25.0f));
+            }
+
+            for (Ball* newBall : newBalls)
+            {
+                balls.push_back(newBall);
+            }
+        }
+        break;
+
+    case PowerUpType::PaddleSpeed:
+    case PowerUpType::PaddleWidth:
+
+        // Already handled inside PowerUpManager::update().
+        break;
+    }
 }
