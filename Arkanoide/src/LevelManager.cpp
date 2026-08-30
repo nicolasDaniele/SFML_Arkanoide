@@ -14,6 +14,7 @@ void LevelManager::init()
 
     levels =
     {
+        // LEVEL 1
         {
             {
                 "###############",
@@ -27,19 +28,7 @@ void LevelManager::init()
             }
         },
 
-        {
-            {
-                "UUUUUUUUUUUUUUU",
-                "U###UUUUUUU###U",
-                "U####UUUUU####U",
-                "U#####UUU#####U",
-                "U######U######U",
-                "U#############U",
-                "U#############U",
-                "UUUUU#####UUUUU"
-            }
-        },
-
+        // LEVEL 2
         {
             {
                 "......###......",
@@ -55,6 +44,8 @@ void LevelManager::init()
                 "......###......"
             }
         },
+
+        // LEVEL 3
         {
             {
                 "UUUUUUUUUUUUUUU",
@@ -68,6 +59,22 @@ void LevelManager::init()
                 "U#############U"
             }
         },
+
+        // LEVEL 4
+        {
+            {
+                "UUUUUUUUUUUUUUU",
+                "U###UUUUUUU###U",
+                "U####UUUUU####U",
+                "U#####UUU#####U",
+                "U######U######U",
+                "U#############U",
+                "U#############U",
+                "UUUUU#####UUUUU"
+            }
+        },
+
+        // LEVE 5
         {
             {
                 "UUUUUUUUUUUUUUU",
@@ -81,6 +88,8 @@ void LevelManager::init()
                 "#UUUUUUUUUUUUUU"
             }
         },
+
+        // LEVEL 6
         {
             {
                 "###############",
@@ -95,6 +104,8 @@ void LevelManager::init()
                 "###############"
             }
         },
+
+        // LEVEL 7
         {
             {
                 "###UUUUUUUUU###",

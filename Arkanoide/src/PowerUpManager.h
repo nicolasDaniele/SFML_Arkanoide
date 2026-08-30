@@ -55,8 +55,7 @@ private:
 	// Relative weight of each type when choosing which power-up to spawn (they don't
 	// need to add up to 1, they get normalized automatically). Order = PowerUpType enum
 	// order: PaddleSpeed, PaddleWidth, ExtraLife, MultiBall. Lower ExtraLife's to keep it rare.
-	//std::array<float, powerUpTypeCount> spawnWeights = { 0.35f, 0.35f, 0.10f, 0.20f };
-	std::array<float, powerUpTypeCount> spawnWeights = { 0.25f, 0.25f, 0.25f, 0.25f };
+	std::array<float, powerUpTypeCount> spawnWeights = { 0.35f, 0.35f, 0.10f, 0.20f };
 
 	// PaddleSpeed / PaddleWidth: stackable boosts, each one multiplies on top of the
 	// previous one up to a cap, and only reset when a life is lost.
@@ -66,7 +65,7 @@ private:
 	static constexpr int maxSpeedBoostStacks = 3;
 	static constexpr int maxWidthBoostStacks = 3;
 
-	static constexpr float speedBoostMultiplier = 1.2f;
+	static constexpr float speedBoostMultiplier = 1.3f;
 	static constexpr float widthBoostMultiplier = 1.2f;
 
 	float basePaddleSpeed = 0.0f;
