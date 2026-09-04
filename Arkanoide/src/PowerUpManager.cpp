@@ -21,14 +21,20 @@ void PowerUpManager::load_texture(PowerUpType type, const std::string& path)
 
 void PowerUpManager::spawn(sf::Vector2f position)
 {
-	PowerUpType type = choose_random_type();
+	std::optional<PowerUpType> type = choose_random_type();
 
-	PowerUp* newPowerUp = new PowerUp(get_texture_for_type(type), position, type, { 0.5f, 0.5f });
+	if (!type.has_value())
+	{
+		return;
+	}
+
+	PowerUp* newPowerUp = new PowerUp(get_texture_for_type(type.value()), position, 
+		type.value(), { 0.5f, 0.5f });
 
 	fallingPowerUps.push_back(newPowerUp);
 }
 
-PowerUpType PowerUpManager::choose_random_type() const
+std::optional<PowerUpType> PowerUpManager::choose_random_type() const
 {
 	float totalWeight = 0.0f;
 
@@ -37,22 +43,50 @@ PowerUpType PowerUpManager::choose_random_type() const
 		totalWeight += weight;
 	}
 
+	if (totalWeight <= 0.0f)
+	{
+		return std::nullopt;
+	}
+
 	float roll = (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) * totalWeight;
 
 	float cumulative = 0.0f;
+	PowerUpType rolledType = static_cast<PowerUpType>(powerUpTypeCount - 1);
 
 	for (int i = 0; i < powerUpTypeCount; i++)
 	{
 		cumulative += spawnWeights[i];
 
-		if (roll <= cumulative)
+		if (roll <= cumulative && spawnWeights[i] > 0.0f)
 		{
-			return static_cast<PowerUpType>(i);
+			rolledType = static_cast<PowerUpType>(i);
+			break;
 		}
 	}
 
-	// Fallback in case of floating point rounding error.
-	return static_cast<PowerUpType>(powerUpTypeCount - 1);
+	// The roll landed on a type that's already at its cap: skip this spawn
+	// entirely instead of redistributing its share among the other types.
+	if (is_type_capped(rolledType))
+	{
+		return std::nullopt;
+	}
+
+	return rolledType;
+}
+
+bool PowerUpManager::is_type_capped(PowerUpType type) const
+{
+	switch (type)
+	{
+	case PowerUpType::PaddleSpeed:
+		return speedBoostStacks >= maxSpeedBoostStacks;
+
+	case PowerUpType::PaddleWidth:
+		return widthBoostStacks >= maxWidthBoostStacks;
+
+	default:
+		return false;
+	}
 }
 
 std::optional<PowerUpType> PowerUpManager::update(float dt,

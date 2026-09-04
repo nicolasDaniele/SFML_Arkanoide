@@ -18,4 +18,7 @@ public:
 	// Functions called when colliding with other entities
 	void ricochet(Entity* other);
 	void bounce_from(sf::FloatRect otherBounds);
+
+private:
+	void prevent_horizontal_trajectory();
 };

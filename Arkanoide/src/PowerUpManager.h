@@ -45,7 +45,8 @@ private:
 	void apply_effect(PowerUpType type, Paddle* paddle);
 	void load_texture(PowerUpType type, const std::string& path);
 	const sf::Texture& get_texture_for_type(PowerUpType type) const;
-	PowerUpType choose_random_type() const;
+	std::optional<PowerUpType> choose_random_type() const;
+	bool is_type_capped(PowerUpType type) const;
 
 	static constexpr int powerUpTypeCount = 4;
 
@@ -55,6 +56,10 @@ private:
 	// Relative weight of each type when choosing which power-up to spawn (they don't
 	// need to add up to 1, they get normalized automatically). Order = PowerUpType enum
 	// order: PaddleSpeed, PaddleWidth, ExtraLife, MultiBall. Lower ExtraLife's to keep it rare.
+	// NOTE: these proportions stay fixed even when a type is capped (see
+	// choose_random_type/is_type_capped) - a roll that lands on a capped type is
+	// simply discarded (no power-up spawns) instead of being redistributed among
+	// the others, so ExtraLife/MultiBall's relative share doesn't change over time.
 	std::array<float, powerUpTypeCount> spawnWeights = { 0.35f, 0.35f, 0.10f, 0.20f };
 
 	// PaddleSpeed / PaddleWidth: stackable boosts, each one multiplies on top of the
@@ -65,7 +70,7 @@ private:
 	static constexpr int maxSpeedBoostStacks = 3;
 	static constexpr int maxWidthBoostStacks = 3;
 
-	static constexpr float speedBoostMultiplier = 1.3f;
+	static constexpr float speedBoostMultiplier = 1.2f;
 	static constexpr float widthBoostMultiplier = 1.2f;
 
 	float basePaddleSpeed = 0.0f;

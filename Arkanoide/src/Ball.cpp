@@ -40,7 +40,10 @@ void Ball::clamp_position(sf::RenderWindow* window)
 
 		if (velocity.y < 0)
 			velocity.y = -velocity.y;
+
 	}
+	
+	prevent_horizontal_trajectory();
 }
 
 void Ball::reset()
@@ -52,24 +55,46 @@ void Ball::reset()
 
 void Ball::ricochet(Entity* other)
 {
-	float otherCenter = other->get_sprite().getPosition().x
-		+ other->get_sprite().getGlobalBounds().size.x / 2.0f;
+	sf::FloatRect paddleBounds = other->get_sprite().getGlobalBounds();
 
-	float ballCenter = sprite.getPosition().x
-		+ sprite.getGlobalBounds().size.x / 2.0f;
+	sf::FloatRect ballBounds = sprite.getGlobalBounds();
 
-	float hitPosition = (ballCenter - otherCenter)
-		/ (other->get_sprite().getGlobalBounds().size.x / 2.0f);
+	float paddleCenter = paddleBounds.position.x + 
+		paddleBounds.size.x / 2.0f;
+
+	float ballCenter = ballBounds.position.x + 
+		ballBounds.size.x / 2.0f;
+
+	// -1 = hit paddle left winger
+	//  0 = hit paddle center
+	// +1 = hit paddle right winger
+	float hitPosition = (ballCenter - paddleCenter) /
+		(paddleBounds.size.x / 2.0f);
 
 	hitPosition = std::clamp(hitPosition, -1.0f, 1.0f);
 
-	float maxAngle = 60.0f * 3.14159f / 180.0f;
+	constexpr float PI = 3.14159265f;
+
+	const float minAngle = 20.0f * PI / 180.0f;
+	const float maxAngle = 60.0f * PI / 180.0f;
+
 	float angle = hitPosition * maxAngle;
 
-	sf::Vector2f newBallVelocity(std::sin(angle) * currentSpeed,
-		-std::cos(angle) * currentSpeed);
+	// Avoid too vertical/horizontal bounces
+	if (std::abs(angle) < minAngle)
+	{
+		if (angle < 0.0f)
+			angle = -minAngle;
+		else
+			angle = minAngle;
+	}
 
-	set_velocity(newBallVelocity);
+	sf::Vector2f newVelocity(
+		std::sin(angle) * currentSpeed,
+		-std::cos(angle) * currentSpeed
+	);
+
+	set_velocity(newVelocity);
 }
 
 void Ball::bounce_from(sf::FloatRect otherBounds)
@@ -119,4 +144,32 @@ void Ball::bounce_from(sf::FloatRect otherBounds)
 		velocity.y * std::cos(angle);
 
 	set_velocity(newX, newY);
+
+	prevent_horizontal_trajectory();
+}
+
+void Ball::prevent_horizontal_trajectory()
+{
+	const float minAngle = 20.0f * 3.14159f / 180.0f;
+
+	float speed = std::sqrt(
+		velocity.x * velocity.x +
+		velocity.y * velocity.y
+	);
+
+	float angle = std::atan2(
+		std::abs(velocity.y),
+		std::abs(velocity.x)
+	);
+
+	if (angle < minAngle)
+	{
+		float directionX = velocity.x < 0.0f ? -1.0f : 1.0f;
+		float directionY = velocity.y < 0.0f ? -1.0f : 1.0f;
+
+		velocity.x = directionX * std::cos(minAngle) * speed;
+		velocity.y = directionY * std::sin(minAngle) * speed;
+
+		set_velocity(velocity);
+	}
 }

@@ -362,10 +362,8 @@ void update(float dt)
         {
             LevelManager::get_instance().load_level(currentLevel);
 
-            for (Ball* currentBall : balls)
-            {
-                currentBall->reset();
-            }
+            clear_balls();
+            balls.push_back(create_ball(ballStartPosition));
 
             paddle->set_position(paddle->get_start_position());
 
@@ -572,6 +570,8 @@ Ball* clone_ball(Ball* source, float angleOffsetDegrees)
 
 void handle_collected_power_up(PowerUpType type)
 {
+    SoundManager::get_instance().play_powerup();
+
     switch (type)
     {
     case PowerUpType::ExtraLife:

@@ -18,6 +18,7 @@ public:
 	void play_beep();
 	void play_cling();
 	void play_lose();
+	void play_powerup();
 
 private:
 	SoundManager() = default;
@@ -29,9 +30,11 @@ private:
 	sf::SoundBuffer beepBuffer;
 	sf::SoundBuffer clingBuffer;
 	sf::SoundBuffer loseBuffer;
+	sf::SoundBuffer powerupBuffer;
 
 	std::optional<sf::Sound> boopSfx;
 	std::optional<sf::Sound> beepSfx;
 	std::optional<sf::Sound> clingSfx;
 	std::optional<sf::Sound> loseSfx;
+	std::optional<sf::Sound> powerupSfx;
 };
