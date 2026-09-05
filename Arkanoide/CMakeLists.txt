@@ -17,8 +17,11 @@ set(SOURCES
     src/Game.cpp
     src/Label.cpp
     src/LevelManager.cpp
+    src/LivesManager.cpp
     src/MovableObject.cpp
     src/Paddle.cpp
+    src/PowerUp.cpp
+    src/PowerUpManager.cpp
     src/ScoreManager.cpp
     src/SoundManager.cpp
 )
