@@ -72,7 +72,7 @@ GameState state;
 void init();
 void handle_inputs(const sf::Event& ev);
 void game_loop();
-void update(float dt);
+void update_game(float dt);
 bool check_collision(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
 void draw();
 void reset();
@@ -275,7 +275,7 @@ void game_loop()
 
     if (state != GameState::GAME_OVER)
     {
-        update(dt.asSeconds());
+        update_game(dt.asSeconds());
     }
 
     // Render
@@ -285,7 +285,7 @@ void game_loop()
 }
 
 
-void update(float dt)
+void update_game(float dt)
 {
     currentTime += dt;
 
