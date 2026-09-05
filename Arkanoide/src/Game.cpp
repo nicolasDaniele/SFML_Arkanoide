@@ -21,6 +21,9 @@ sf::RenderWindow* window;
 Paddle* paddle;
 std::vector<Ball*> balls;
 
+const int GAME_WIDTH = 450;
+const int GAME_HEIGHT = 600;
+
 // Ball spawn parameters (used to create new balls, e.g. when a life is lost)
 const std::string ballTexturePath = "Assets/Sprites/ball.png";
 const float ballInitialSpeed = 200.0f;
@@ -75,7 +78,7 @@ void handle_collected_power_up(PowerUpType type);
 
 int main()
 {
-    window = new sf::RenderWindow( sf::VideoMode({ 450, 600 }), "Arkanoide");
+    window = new sf::RenderWindow( sf::VideoMode({ GAME_WIDTH, GAME_HEIGHT }), "Arkanoide");
 
     window->setFramerateLimit(60);
 
@@ -267,12 +270,12 @@ void update(float dt)
     for (int i = 0; i < subSteps; ++i)
     {
         paddle->update(subDt);
-        paddle->clamp_position(window);
+        paddle->clamp_position(static_cast<float>(GAME_WIDTH), static_cast<float>(GAME_HEIGHT));
 
         for (Ball* currentBall : balls)
         {
             currentBall->update(subDt);
-            currentBall->clamp_position(window);
+            currentBall->clamp_position(static_cast<float>(GAME_WIDTH), static_cast<float>(GAME_HEIGHT));
 
             // Paddle-Ball collision
             if (check_collision(
@@ -310,7 +313,8 @@ void update(float dt)
                             blockBounds.position.x + blockBounds.size.x / 2.0f,
                             blockBounds.position.y + blockBounds.size.y / 2.0f);
 
-                        PowerUpManager::get_instance().spawn(spawnPosition);
+                        PowerUpManager::get_instance().spawn(spawnPosition,
+                            static_cast<int>(balls.size()));
                     }
                 }
                 else
@@ -583,17 +587,33 @@ void handle_collected_power_up(PowerUpType type)
 
     case PowerUpType::MultiBall:
         {
-            std::vector<Ball*> newBalls;
+            // Re-check the multiplier at collection time (not spawn time): the ball
+            // count may have changed while this power-up was falling.
+            int multiplier = PowerUpManager::get_instance().get_multiball_multiplier(
+                static_cast<int>(balls.size()));
 
-            for (Ball* existingBall : balls)
-            {
-                newBalls.push_back(clone_ball(existingBall, 25.0f));
-                newBalls.push_back(clone_ball(existingBall, -25.0f));
-            }
+            int clonesPerBall = multiplier - 1;
 
-            for (Ball* newBall : newBalls)
+            if (clonesPerBall > 0)
             {
-                balls.push_back(newBall);
+                std::vector<Ball*> newBalls;
+
+                for (Ball* existingBall : balls)
+                {
+                    // clonesPerBall is 1 (x2) or 2 (x3); this covers both with the
+                    // same +25/-25 degree offsets used before.
+                    for (int i = 0; i < clonesPerBall; i++)
+                    {
+                        float angleOffset = (i == 0) ? 25.0f : -25.0f;
+
+                        newBalls.push_back(clone_ball(existingBall, angleOffset));
+                    }
+                }
+
+                for (Ball* newBall : newBalls)
+                {
+                    balls.push_back(newBall);
+                }
             }
         }
         break;

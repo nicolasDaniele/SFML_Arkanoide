@@ -2,7 +2,7 @@
 
 void LivesManager::init()
 {
-	lives = maxLives;
+	lives = startLives;
 }
 
 void LivesManager::lose_life()
@@ -12,7 +12,10 @@ void LivesManager::lose_life()
 
 void LivesManager::add_life()
 {
-	lives++;
+	if (lives < maxLives)
+	{
+		lives++;
+	}
 }
 
 void LivesManager::reset_lives()
@@ -28,4 +31,9 @@ int LivesManager::get_lives() const
 bool LivesManager::is_game_over() const
 {
 	return lives < 1;
+}
+
+bool LivesManager::is_at_max_lives() const
+{
+	return lives >= maxLives;
 }

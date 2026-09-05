@@ -8,7 +8,7 @@ void Ball::update(float dt)
 	sprite.move(velocity * dt);
 }
 
-void Ball::clamp_position(sf::RenderWindow* window)
+void Ball::clamp_position(float width, float height)
 {
 	sf::FloatRect bounds = sprite.getGlobalBounds();
 
@@ -22,10 +22,10 @@ void Ball::clamp_position(sf::RenderWindow* window)
 	}
 
 	// Right Screen Border
-	else if (bounds.position.x + bounds.size.x > window->getSize().x)
+	else if (bounds.position.x + bounds.size.x > width)
 	{
 		float overflow = bounds.position.x + 
-			bounds.size.x - window->getSize().x;
+			bounds.size.x - width;
 
 		sprite.move({ -overflow, 0 });
 

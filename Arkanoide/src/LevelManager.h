@@ -54,5 +54,5 @@ private:
     std::vector<Block*> blocks;
     sf::Texture blockTexture;
 
-    const float powerUpChance = 0.12f;
+    const float powerUpChance = 0.2f;
 };

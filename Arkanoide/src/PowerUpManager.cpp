@@ -2,6 +2,7 @@
 #include <iostream>
 #include "PowerUpManager.h"
 #include "Paddle.h"
+#include "LivesManager.h"
 
 void PowerUpManager::init()
 {
@@ -19,22 +20,21 @@ void PowerUpManager::load_texture(PowerUpType type, const std::string& path)
 	}
 }
 
-void PowerUpManager::spawn(sf::Vector2f position)
+void PowerUpManager::spawn(sf::Vector2f position, int currentBallCount)
 {
-	std::optional<PowerUpType> type = choose_random_type();
+	std::optional<PowerUpType> type = choose_random_type(currentBallCount);
 
 	if (!type.has_value())
 	{
 		return;
 	}
 
-	PowerUp* newPowerUp = new PowerUp(get_texture_for_type(type.value()), position, 
-		type.value(), { 0.5f, 0.5f });
+	PowerUp* newPowerUp = new PowerUp(get_texture_for_type(type.value()), position, type.value());
 
 	fallingPowerUps.push_back(newPowerUp);
 }
 
-std::optional<PowerUpType> PowerUpManager::choose_random_type() const
+std::optional<PowerUpType> PowerUpManager::choose_random_type(int currentBallCount) const
 {
 	float totalWeight = 0.0f;
 
@@ -66,7 +66,7 @@ std::optional<PowerUpType> PowerUpManager::choose_random_type() const
 
 	// The roll landed on a type that's already at its cap: skip this spawn
 	// entirely instead of redistributing its share among the other types.
-	if (is_type_capped(rolledType))
+	if (is_type_capped(rolledType, currentBallCount))
 	{
 		return std::nullopt;
 	}
@@ -74,7 +74,7 @@ std::optional<PowerUpType> PowerUpManager::choose_random_type() const
 	return rolledType;
 }
 
-bool PowerUpManager::is_type_capped(PowerUpType type) const
+bool PowerUpManager::is_type_capped(PowerUpType type, int currentBallCount) const
 {
 	switch (type)
 	{
@@ -84,9 +84,35 @@ bool PowerUpManager::is_type_capped(PowerUpType type) const
 	case PowerUpType::PaddleWidth:
 		return widthBoostStacks >= maxWidthBoostStacks;
 
+	case PowerUpType::ExtraLife:
+		return LivesManager::get_instance().is_at_max_lives();
+
+	case PowerUpType::MultiBall:
+		return get_multiball_multiplier(currentBallCount) == 0;
+
 	default:
 		return false;
 	}
+}
+
+int PowerUpManager::get_multiball_multiplier(int currentBallCount) const
+{
+	if (currentBallCount <= 0)
+	{
+		return 0;
+	}
+
+	if (currentBallCount * multiballPrimaryMultiplier <= maxBallsOnScreen)
+	{
+		return multiballPrimaryMultiplier;
+	}
+
+	if (currentBallCount * multiballFallbackMultiplier <= maxBallsOnScreen)
+	{
+		return multiballFallbackMultiplier;
+	}
+
+	return 0;
 }
 
 std::optional<PowerUpType> PowerUpManager::update(float dt,

@@ -5,11 +5,11 @@ void Paddle::update(float dt)
     sprite.move(velocity * dt);
 }
 
-void Paddle::clamp_position(sf::RenderWindow* window)
+void Paddle::clamp_position(float width, float height)
 {
     const float halfWidth = sprite.getGlobalBounds().size.x / 2.0f;
     const float minXPos = halfWidth;
-    const float maxXPos = static_cast<float>(window->getSize().x) - halfWidth;
+    const float maxXPos = width - halfWidth;
 
     const sf::Vector2f position = sprite.getPosition();
 

@@ -11,6 +11,6 @@ public:
     ~Paddle() override = default;
 
     void update(float dt) override;
-    void clamp_position(sf::RenderWindow* window) override;
+    void clamp_position(float width, float height) override;
     void reset() override;
 };

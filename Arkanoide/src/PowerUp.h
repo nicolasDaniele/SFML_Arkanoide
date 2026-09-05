@@ -15,7 +15,7 @@ class PowerUp : public Entity
 {
 public:
 	PowerUp(const sf::Texture& texture, sf::Vector2f _startPosition,
-		PowerUpType _type, sf::Vector2f _scale);
+		PowerUpType _type, sf::Vector2f _scale = { 0.5f, 0.5f });
 	~PowerUp() = default;
 
 	void update(float dt) override;

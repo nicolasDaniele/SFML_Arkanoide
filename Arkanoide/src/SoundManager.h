@@ -23,6 +23,8 @@ public:
 private:
 	SoundManager() = default;
 
+	static constexpr float SFX_VOLUME = 45.f;
+
 	bool load_sound(sf::SoundBuffer& buffer, std::optional<sf::Sound>& sound,
 		const std::string& path);
 

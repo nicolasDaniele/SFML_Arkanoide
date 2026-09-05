@@ -46,6 +46,7 @@ bool SoundManager::load_sound(sf::SoundBuffer& buffer,
 	}
 
 	sound.emplace(buffer);
+	sound->setVolume(SFX_VOLUME);
 
 	return true;
 }

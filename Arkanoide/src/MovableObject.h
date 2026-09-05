@@ -28,7 +28,7 @@ public:
 	bool is_at_max_speed() const;
 	void set_max_speed(const float newMaxSpeed);
 	void clamp_velocity();
-	virtual void clamp_position(sf::RenderWindow* window) = 0;
+	virtual void clamp_position(float width, float height) = 0;
 	virtual void reset() = 0;
 
 protected:
