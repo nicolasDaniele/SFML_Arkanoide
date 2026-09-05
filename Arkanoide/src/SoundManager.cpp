@@ -27,6 +27,12 @@ bool SoundManager::init()
 		return false;
 	}
 
+	if (!load_sound(powerupBuffer, powerupSfx, "Assets/Sounds/powerup.ogg"))
+	{
+		std::cout << "SoundManager: could not load powerupSfx\n";
+		return false;
+	}
+
 	return true;
 }
 
@@ -40,6 +46,7 @@ bool SoundManager::load_sound(sf::SoundBuffer& buffer,
 	}
 
 	sound.emplace(buffer);
+	sound->setVolume(SFX_VOLUME);
 
 	return true;
 }
@@ -66,4 +73,10 @@ void SoundManager::play_lose()
 {
 	if (loseSfx.has_value())
 		loseSfx->play();
+}
+
+void SoundManager::play_powerup()
+{
+	if (powerupSfx.has_value())
+		powerupSfx->play();
 }

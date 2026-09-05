@@ -16,6 +16,7 @@ struct BlockCollision
 {
     sf::FloatRect blockBounds;
     bool isBreakable;
+    bool shouldSpawnPowerUp;
 };
 
 enum class BlockType
@@ -46,10 +47,12 @@ private:
     ~LevelManager();
 
     BlockType get_block_type(char symbol);
-    Block* create_block(BlockType type, sf::Color color, sf::Vector2f position);
+    Block* create_block(BlockType type, sf::Color color, sf::Vector2f position, bool dropsPowerUp);
     sf::Color from_hsv(float hue, float saturation, float value);
 
     std::vector<Level> levels;
     std::vector<Block*> blocks;
     sf::Texture blockTexture;
+
+    const float powerUpChance = 0.2f;
 };

@@ -12,10 +12,13 @@ public:
 	~Ball() = default;
 
 	void update(float dt) override;
-	void clamp_position(sf::RenderWindow* window) override;
+	void clamp_position(float width, float height) override;
 	void reset() override;
 
 	// Functions called when colliding with other entities
 	void ricochet(Entity* other);
 	void bounce_from(sf::FloatRect otherBounds);
+
+private:
+	void prevent_horizontal_trajectory();
 };
