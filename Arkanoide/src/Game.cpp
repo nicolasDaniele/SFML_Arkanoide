@@ -17,12 +17,18 @@
 #include "PowerUpManager.h"
 #include "Label.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 sf::RenderWindow* window;
 Paddle* paddle;
 std::vector<Ball*> balls;
 
 const int GAME_WIDTH = 450;
 const int GAME_HEIGHT = 600;
+
+sf::Clock gameClock;
 
 // Ball spawn parameters (used to create new balls, e.g. when a life is lost)
 const std::string ballTexturePath = "Assets/Sprites/ball.png";
@@ -65,6 +71,7 @@ GameState state;
 
 void init();
 void handle_inputs(const sf::Event& ev);
+void game_loop();
 void update(float dt);
 bool check_collision(const sf::FloatRect& rect1, const sf::FloatRect& rect2);
 void draw();
@@ -80,9 +87,9 @@ int main()
 {
     window = new sf::RenderWindow( sf::VideoMode({ GAME_WIDTH, GAME_HEIGHT }), "Arkanoide");
 
+#ifndef __EMSCRIPTEN__
     window->setFramerateLimit(60);
-
-    sf::Clock clock;
+#endif
 
     currentTime = 0.0f;
     prevTime = 0.0f;
@@ -93,45 +100,23 @@ int main()
 
     init();
 
+    gameClock.restart();
+
+
+#ifdef __EMSCRIPTEN__
+// Emscripten calls game_loop() once per browser frame.
+// fps = 0 lets Emscripten use requestAnimationFrame.
+// simulate_infinite_loop = 1 tells Emscripten that main
+// does not return.
+    emscripten_set_main_loop(game_loop, 0, 1);
+#else
     while (window->isOpen())
     {
-        while (const std::optional event = window->pollEvent())
-        {
-            if (event->is<sf::Event::Closed>())
-            {
-                window->close();
-            }
-
-            handle_inputs(*event);
-
-            // Update Paddle velocity
-            if (movingLeft && !movingRight)
-            {
-                paddle->set_velocity(-paddle->get_current_speed(), 0);
-            }
-            else if (movingRight && !movingLeft)
-            {
-                paddle->set_velocity(paddle->get_current_speed(), 0);
-            }
-            else
-            {
-                paddle->set_velocity(0, 0);
-            }
-        }
-
-        sf::Time dt = clock.restart();
-
-        if (state != GameState::GAME_OVER)
-        {
-            update(dt.asSeconds());
-        }
-
-        window->clear();
-        draw();
-        window->display();
+        game_loop();
     }
 
     finish_game();
+#endif
 
     return 0;
 }
@@ -239,6 +224,64 @@ void handle_inputs(const sf::Event& ev)
             movingRight = false;
         }
     }
+}
+
+
+void game_loop()
+{
+    if (!window->isOpen())
+    {
+#ifdef __EMSCRIPTEN__
+        emscripten_cancel_main_loop();
+#endif
+
+        finish_game();
+        return;
+    }
+
+    // Process events
+    while (const std::optional event = window->pollEvent())
+    {
+        if (event->is<sf::Event::Closed>())
+        {
+            window->close();
+
+#ifdef __EMSCRIPTEN__
+            emscripten_cancel_main_loop();
+            finish_game();
+            return;
+#endif
+        }
+
+        handle_inputs(*event);
+
+        // Update Paddle velocity
+        if (movingLeft && !movingRight)
+        {
+            paddle->set_velocity(-paddle->get_current_speed(), 0);
+        }
+        else if (movingRight && !movingLeft)
+        {
+            paddle->set_velocity(paddle->get_current_speed(), 0);
+        }
+        else
+        {
+            paddle->set_velocity(0, 0);
+        }
+    }
+
+    // Calculate delta time
+    sf::Time dt = gameClock.restart();
+
+    if (state != GameState::GAME_OVER)
+    {
+        update(dt.asSeconds());
+    }
+
+    // Render
+    window->clear();
+    draw();
+    window->display();
 }
 
 
