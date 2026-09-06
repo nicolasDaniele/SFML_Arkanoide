@@ -60,13 +60,19 @@
 
     <body>
         <div id="canvas-container">
-            <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+            <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
         </div>
 
         <script>
             var Module = {
                 canvas: document.getElementById('canvas'),
-            };
+                        onRuntimeInitialized: function() {
+                            Module.canvas.focus();
+                        }};
+
+            Module.canvas.addEventListener("click", function() {
+                        Module.canvas.focus();
+            });
         </script>
         {{{ SCRIPT }}}
     </body>
