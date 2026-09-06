@@ -1,9 +1,11 @@
 #include "PowerUp.h"
 
 PowerUp::PowerUp(const sf::Texture& texture, sf::Vector2f _startPosition,
-	PowerUpType _type, sf::Vector2f _scale) 
-	: Entity(texture, _startPosition), type(_type)
+	PowerUpType _type, sf::Vector2f _scale) : Entity(texture, _startPosition), type(_type)
 {
+	sf::FloatRect bounds = sprite.getLocalBounds();
+	sprite.setOrigin(sf::Vector2f(bounds.size.x / 2.f, bounds.size.y / 2.f));
+
 	set_scale(_scale.x, _scale.y);
 }
 
