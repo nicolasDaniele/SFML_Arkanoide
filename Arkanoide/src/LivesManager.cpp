@@ -20,7 +20,7 @@ void LivesManager::add_life()
 
 void LivesManager::reset_lives()
 {
-	lives = maxLives;
+	lives = startLives;
 }
 
 int LivesManager::get_lives() const
